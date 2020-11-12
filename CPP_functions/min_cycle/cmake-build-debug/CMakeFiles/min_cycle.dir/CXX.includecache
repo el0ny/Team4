@@ -1,0 +1,22 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+C:/Users/Yanina Sandryhaila/Team4/CPP_functions/min_cycle/main.cpp
+iostream
+-
+vector
+-
+algorithm
+-
+string
+-
+queue
+-
+set
+-
+
