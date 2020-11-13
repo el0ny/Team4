@@ -7,14 +7,20 @@ screen_height = 900
 WHITE = (255, 255, 255)
 YELLOW = (225, 225, 0)
 
+
 class Point:
-    def __init__(self, idx, post_idx, coordinates=None):
+    def __init__(self, idx, post_idx=None, coordinates=None):
         self.idx = idx
         self.post_idx = post_idx
         self.coordinates = coordinates
+        self.adjacent_points = None
+        self.faces = []
 
     def set_coords(self, x, y):
         self.coordinates = [x, y]
+
+    def set_adjacent_points(self, points):
+        self.adjacent_points = points
 
     def draw(self, screen):
         pygame.draw.circle(screen, YELLOW, self.coordinates, 10)
@@ -26,21 +32,35 @@ class Line:
         self.length = length
         self.points = points
 
+    def get_points(self):
+        return [point.idx for point in self.points]
+
     def draw(self, screen):
         pygame.draw.aaline(screen, WHITE, self.points[0].coordinates, self.points[1].coordinates)
 
 
+class Face:
+    def __init__(self, points):
+        self.points = points
+
+
 class Graph:
-    def __init__(self, graph_dict):
+    def __init__(self, graph_dict, points=None, lines=None):
         self.points = {}
         self.lines = {}
         self.name = graph_dict['name']
         self.idx = graph_dict['idx']
-        for point in graph_dict['points']:
-            self.points[point['idx']] = Point(point['idx'], point['post_idx'])
-        for line in graph_dict['lines']:
-            point_list = [self.points[point] for point in line['points']]
-            self.lines[line['idx']] = Line(line['idx'], line['length'], point_list)
+        if points is not None:
+            self.points = points
+        else:
+            for point in graph_dict['points']:
+                self.points[point['idx']] = Point(point['idx'], point['post_idx'])
+        if lines is not None:
+            self.lines = lines
+        else:
+            for line in graph_dict['lines']:
+                point_list = [self.points[point] for point in line['points']]
+                self.lines[line['idx']] = Line(line['idx'], line['length'], point_list)
 
     def draw(self, screen):
         for point in self.points.values():
