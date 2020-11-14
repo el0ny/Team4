@@ -1,7 +1,8 @@
 import pygame
 import json
-from graph import Graph, Point, Line
-from cycleModule import getCycle
+from graph import Graph, Point, Line, Face
+from graphModule import getCycle
+from make_planar import cycle_to_graph
 
 
 screen_width = 1600
@@ -23,6 +24,9 @@ def main():
         lines[line['idx']] = Line(line['idx'], line['length'], point_list)
 
     cycle = getCycle([line.get_points() for line in lines.values()])
+    subgraph = cycle_to_graph(points, cycle)
+    face = Face(subgraph)
+    out_face = face
 
     pygame.init()
     sc = pygame.display.set_mode((screen_width, screen_height))

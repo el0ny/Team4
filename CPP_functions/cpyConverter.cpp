@@ -2,7 +2,8 @@
 #include <vector>
 #include <stdexcept>
 #include <set>
-#include <find_cycle.h>
+#include "cycle/find_cycle.h"
+//#include "fragm_alwdFaces"
 using namespace std;
 
 // Vector -> List
@@ -120,15 +121,15 @@ static PyMethodDef myMethods[] =
     {NULL, NULL, 0, NULL}
 };
 
-static struct PyModuleDef cycleModule = {
+static struct PyModuleDef graphModule = {
 	PyModuleDef_HEAD_INIT,
-	"cycleModule",
-	"Conversion Module",
+	"graphModule",
+	"Module with cpp graph functions",
 	-1,
 	myMethods
 };
 
-PyMODINIT_FUNC PyInit_cycleModule(void)
+PyMODINIT_FUNC PyInit_graphModule(void)
 {
-    return PyModule_Create(&cycleModule);
+    return PyModule_Create(&graphModule);
 }
