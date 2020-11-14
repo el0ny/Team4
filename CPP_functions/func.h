@@ -24,6 +24,6 @@ struct Fragment {
 std::vector<Fragment>
 GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<std::pair<int, int>> &subgraph);
 
-std::vector<std::vector<int>> GetAllowedFace(Fragment fragment, std::vector<std::vector<int>> faces);
+std::vector<int> GetAllowedFace(const std::vector<int>& main_points, const std::vector<std::vector<int>>& faces);
 
 #endif //GETFRAGMENTS_FUNC_H
