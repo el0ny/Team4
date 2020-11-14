@@ -32,6 +32,9 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
             while (!order.empty()) {
                 int cur = order.front();
                 order.pop();
+                if (std::find(fragment.main_points.begin(),fragment.main_points.end(), cur) == fragment.main_points.end()) {
+                    fragment.main_points.push_back(cur);
+                }
                 for (auto line : graph) {
                     if (line.first == cur || line.second == cur) {
                         int next_point = (cur == line.first) ? line.second : line.first;
@@ -48,6 +51,9 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
                             (subgraph_points.find(next_point) != subgraph_points.end()) ||
                             (subgraph_points.find(cur) != subgraph_points.end())) {
                             fragment.lines.push_back({next_point, cur});
+                            if (std::find(fragment.main_points.begin(),fragment.main_points.end(), next_point) == fragment.main_points.end()) {
+                                fragment.main_points.push_back(next_point);
+                            }
                         }
                     }
                 }
@@ -70,12 +76,12 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
     return fragments;
 }
 
-std::vector<Face> GetAllowedFace(Fragment fragment, std::vector<Face> faces) {
-    std::vector<Face> allowed_faces;
+std::vector<std::vector<int>> GetAllowedFace(Fragment fragment, std::vector<std::vector<int>> faces) {
+    std::vector<std::vector<int>> allowed_faces;
     std::unordered_set<int> fragment_points(fragment.main_points.begin(),
-                                            fragment.main_points.end()); //если Fragment хранит points то можно работать сразу с ними
+                                            fragment.main_points.end());
     for (auto face : faces) {
-        std::unordered_set<int> face_points(face.points.begin(), face.points.end());
+        std::unordered_set<int> face_points(face.begin(), face.end());
         if (face_points == fragment_points) {
             allowed_faces.push_back(face);
         }
