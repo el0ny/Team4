@@ -70,12 +70,12 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
     return fragments;
 }
 
-std::vector<Face> GetAllowedFace(Fragment fragment, std::vector<Face> faces) {
-    std::vector<Face> allowed_faces;
+std::vector<std::vector<int>> GetAllowedFace(Fragment fragment, std::vector<std::vector<int>> faces) {
+    std::vector<std::vector<int>> allowed_faces;
     std::unordered_set<int> fragment_points(fragment.main_points.begin(),
-                                            fragment.main_points.end()); //если Fragment хранит points то можно работать сразу с ними
+                                            fragment.main_points.end());
     for (auto face : faces) {
-        std::unordered_set<int> face_points(face.points.begin(), face.points.end());
+        std::unordered_set<int> face_points(face.begin(), face.end());
         if (face_points == fragment_points) {
             allowed_faces.push_back(face);
         }

@@ -16,11 +16,6 @@
 
 bool operator==(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs);
 
-struct Face {
-    std::vector<int> points;
-};
-
-
 struct Fragment {
     std::vector<int> main_points;
     std::vector<std::pair<int, int>> lines;
@@ -29,6 +24,6 @@ struct Fragment {
 std::vector<Fragment>
 GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<std::pair<int, int>> &subgraph);
 
-std::vector<Face> GetAllowedFace(Fragment fragment, std::vector<Face> faces);
+std::vector<std::vector<int>> GetAllowedFace(Fragment fragment, std::vector<std::vector<int>> faces);
 
 #endif //GETFRAGMENTS_FUNC_H
