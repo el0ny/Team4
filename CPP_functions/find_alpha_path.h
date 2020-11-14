@@ -1,7 +1,5 @@
+#pragma once
 #include <vector>
 using namespace std;
 
-struct Line;
-struct Fragment;
-
-vector<int> FindAlphaPath(const Fragment &fragment, const vector<Line> &subgraph);
+vector<int> FindAlphaPath(const vector<pair<int, int>> &fragment, const vector<int> &points);
