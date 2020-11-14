@@ -1,7 +1,7 @@
 import pygame
 import json
 from graph import Graph, Point, Line
-from myModule import getMaxCycle
+from cycleModule import getCycle
 
 
 screen_width = 1600
@@ -22,7 +22,7 @@ def main():
         point_list = [points[point] for point in line['points']]
         lines[line['idx']] = Line(line['idx'], line['length'], point_list)
 
-    cycle = getMaxCycle([line.get_points() for line in lines.values()])
+    cycle = getCycle([line.get_points() for line in lines.values()])
 
     pygame.init()
     sc = pygame.display.set_mode((screen_width, screen_height))
