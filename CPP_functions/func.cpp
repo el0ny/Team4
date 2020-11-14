@@ -32,6 +32,9 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
             while (!order.empty()) {
                 int cur = order.front();
                 order.pop();
+                if (std::find(fragment.main_points.begin(),fragment.main_points.end(), cur) == fragment.main_points.end()) {
+                    fragment.main_points.push_back(cur);
+                }
                 for (auto line : graph) {
                     if (line.first == cur || line.second == cur) {
                         int next_point = (cur == line.first) ? line.second : line.first;
@@ -48,6 +51,9 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
                             (subgraph_points.find(next_point) != subgraph_points.end()) ||
                             (subgraph_points.find(cur) != subgraph_points.end())) {
                             fragment.lines.push_back({next_point, cur});
+                            if (std::find(fragment.main_points.begin(),fragment.main_points.end(), next_point) == fragment.main_points.end()) {
+                                fragment.main_points.push_back(next_point);
+                            }
                         }
                     }
                 }
