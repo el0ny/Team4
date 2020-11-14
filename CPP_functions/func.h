@@ -14,8 +14,6 @@
 #include <algorithm>
 
 
-bool operator==(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs);
-
 struct Fragment {
     std::vector<int> main_points;
     std::vector<std::pair<int, int>> lines;
