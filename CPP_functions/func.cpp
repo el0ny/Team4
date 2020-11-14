@@ -1,23 +1,24 @@
 #include "func.h"
 
-bool Line::operator==(const Line &rhs) const {
-    return (x == rhs.x && y == rhs.y) || (y == rhs.x && x == rhs.y);
-}
+/*bool operator==(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs){
+    return (lhs.first == rhs.first && lhs.second == rhs.second) || (lhs.second == rhs.first && lhs.first == rhs.second);
+}*/
 
-std::vector<Fragment> GetFragments(const std::vector<Line> &graph, const std::vector<Line> &subgraph) {
+std::vector<Fragment>
+GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<std::pair<int, int>> &subgraph) {
     std::unordered_set<int> subgraph_points;
     for (auto line : subgraph) {
-        subgraph_points.insert(line.x);
-        subgraph_points.insert(line.y);
+        subgraph_points.insert(line.first);
+        subgraph_points.insert(line.second);
     }
 
     std::unordered_map<int, bool> other_points;
     for (auto line : graph) {
-        if (subgraph_points.find(line.x) == subgraph_points.end()) {
-            other_points[line.x] = false;
+        if (subgraph_points.find(line.first) == subgraph_points.end()) {
+            other_points[line.first] = false;
         }
-        if (subgraph_points.find(line.y) == subgraph_points.end()) {
-            other_points[line.y] = false;
+        if (subgraph_points.find(line.second) == subgraph_points.end()) {
+            other_points[line.second] = false;
         }
     }
 
@@ -32,8 +33,8 @@ std::vector<Fragment> GetFragments(const std::vector<Line> &graph, const std::ve
                 int cur = order.front();
                 order.pop();
                 for (auto line : graph) {
-                    if (line.x == cur || line.y == cur) {
-                        int next_point = (cur == line.x) ? line.y : line.x;
+                    if (line.first == cur || line.second == cur) {
+                        int next_point = (cur == line.first) ? line.second : line.first;
                         if (subgraph_points.find(next_point) == subgraph_points.end() &&
                             !other_points[next_point]) {
                             order.push(next_point);
@@ -57,10 +58,13 @@ std::vector<Fragment> GetFragments(const std::vector<Line> &graph, const std::ve
     }
 
     for (auto line : graph) {
-        if (subgraph_points.find(line.x) != subgraph_points.end() &&
-            subgraph_points.find(line.y) != subgraph_points.end() &&
-            std::find(std::begin(subgraph), std::end(subgraph), line) == std::end(subgraph)) {
-            fragments.push_back({{line}});
+        if (subgraph_points.find(line.first) != subgraph_points.end() &&
+            subgraph_points.find(line.second) != subgraph_points.end() &&
+            (std::find(std::begin(subgraph), std::end(subgraph), line) == std::end(subgraph) &&
+             std::find(std::begin(subgraph), std::end(subgraph), std::make_pair(line.second, line.first)) ==
+             std::end(subgraph))) {
+
+            fragments.push_back({{}, {line}});
         }
     }
     return fragments;
@@ -68,11 +72,8 @@ std::vector<Fragment> GetFragments(const std::vector<Line> &graph, const std::ve
 
 std::vector<Face> GetAllowedFace(Fragment fragment, std::vector<Face> faces) {
     std::vector<Face> allowed_faces;
-    std::unordered_set<int> fragment_points; //если Fragment хранит points то можно работать сразу с ними
-    for (auto line : fragment.lines) {
-        fragment_points.insert(line.y);
-        fragment_points.insert(line.x);
-    }
+    std::unordered_set<int> fragment_points(fragment.main_points.begin(),
+                                            fragment.main_points.end()); //если Fragment хранит points то можно работать сразу с ними
     for (auto face : faces) {
         std::unordered_set<int> face_points(face.points.begin(), face.points.end());
         if (face_points == fragment_points) {
