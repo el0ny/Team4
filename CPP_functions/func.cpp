@@ -1,8 +1,5 @@
 #include "func.h"
 
-/*bool operator==(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs){
-    return (lhs.first == rhs.first && lhs.second == rhs.second) || (lhs.second == rhs.first && lhs.first == rhs.second);
-}*/
 
 std::vector<Fragment>
 GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<std::pair<int, int>> &subgraph) {
@@ -11,7 +8,6 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
         subgraph_points.insert(line.first);
         subgraph_points.insert(line.second);
     }
-
     std::unordered_map<int, bool> other_points;
     for (auto line : graph) {
         if (subgraph_points.find(line.first) == subgraph_points.end()) {
@@ -21,7 +17,6 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
             other_points[line.second] = false;
         }
     }
-
     std::vector<Fragment> fragments;
     Fragment fragment = {};
     for (auto &point : other_points) {
@@ -33,7 +28,7 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
                 int cur = order.front();
                 order.pop();
                 if (std::find(fragment.main_points.begin(), fragment.main_points.end(), cur) ==
-                    fragment.main_points.end()) {
+                    fragment.main_points.end() && subgraph_points.find(cur) != subgraph_points.end()) {
                     fragment.main_points.push_back(cur);
                 }
                 for (auto line : graph) {
@@ -45,16 +40,16 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
 
                             other_points[next_point] = true;
                         }
-
                         if ((other_points.find(next_point) != other_points.end() &&
                              other_points.find(cur) != other_points.end() &&
                              cur < next_point) ||
                             (subgraph_points.find(next_point) != subgraph_points.end()) ||
                             (subgraph_points.find(cur) != subgraph_points.end())) {
-                            fragment.lines.push_back({next_point, cur});
+                            fragment.lines.emplace_back(next_point, cur);
+
                             if (std::find(fragment.main_points.begin(), fragment.main_points.end(), next_point) ==
                                 fragment.main_points.end() &&
-                                subgraph_points.find(next_point) == subgraph_points.end()) {
+                                subgraph_points.find(next_point) != subgraph_points.end()) {
                                 fragment.main_points.push_back(next_point);
                             }
                         }
@@ -65,14 +60,12 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
             fragment = {};
         }
     }
-
     for (auto line : graph) {
         if (subgraph_points.find(line.first) != subgraph_points.end() &&
             subgraph_points.find(line.second) != subgraph_points.end() &&
             (std::find(std::begin(subgraph), std::end(subgraph), line) == std::end(subgraph) &&
              std::find(std::begin(subgraph), std::end(subgraph), std::make_pair(line.second, line.first)) ==
              std::end(subgraph))) {
-
             fragments.push_back({{},
                                  {line}});
         }
@@ -80,14 +73,13 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
     return fragments;
 }
 
-std::vector<std::vector<int>> GetAllowedFace(Fragment fragment, std::vector<std::vector<int>> faces) {
-    std::vector<std::vector<int>> allowed_faces;
-    std::unordered_set<int> fragment_points(fragment.main_points.begin(),
-                                            fragment.main_points.end());
-    for (auto face : faces) {
-        std::unordered_set<int> face_points(face.begin(), face.end());
-        if (face_points == fragment_points) {
-            allowed_faces.push_back(face);
+std::vector<int> GetAllowedFace(const std::vector<int>& main_points, const std::vector<std::vector<int>>& faces) {
+    std::vector<int> allowed_faces;
+    for (int i = 0; i < faces.size(); ++i) {
+        std::vector<int> intersection;
+        std::set_intersection(main_points.begin(), main_points.end(), faces[i].begin(), faces[i].end(), std::back_inserter(intersection));
+        if (intersection.size() == faces[i].size()) {
+            allowed_faces.push_back(i);
         }
     }
     return allowed_faces;
