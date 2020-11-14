@@ -13,12 +13,8 @@
 #include <unordered_set>
 #include <algorithm>
 
-struct Line {
-    int x;
-    int y;
 
-    bool operator==(const Line &rhs) const;
-};
+bool operator==(const std::pair<int, int> &lhs, const std::pair<int, int> &rhs);
 
 struct Face {
     std::vector<int> points;
@@ -26,10 +22,12 @@ struct Face {
 
 
 struct Fragment {
-    std::vector <Line> lines;
+    std::vector<int> main_points;
+    std::vector<std::pair<int, int>> lines;
 };
 
-std::vector<Fragment> GetFragments(const std::vector <Line> &graph, const std::vector <Line> &subgraph);
+std::vector<Fragment>
+GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<std::pair<int, int>> &subgraph);
 
 std::vector<Face> GetAllowedFace(Fragment fragment, std::vector<Face> faces);
 
