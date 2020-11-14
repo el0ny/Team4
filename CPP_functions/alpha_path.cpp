@@ -1,28 +1,21 @@
 #include "find_alpha_path.h"
+#include <algorithm>
 #include <iostream>
 #include <queue>
 #include <unordered_map>
 #include <unordered_set>
 
-// Скопировала пока структурки из getFragments
-struct Line {
-    int x;
-    int y;
-
-    bool operator==(const Line &rhs) const {
-        return (x == rhs.x && y == rhs.y) || (y == rhs.x && x == rhs.y);
-    }
-};
-struct Fragment {
-    vector<Line> lines;
-};
-
-template<typename T, typename Container>
-bool Contain(T v, Container &c) {
+template<typename T, typename V>
+bool Contain(T v, const unordered_map<T, V> &c) {
     return c.find(v) != c.end();
 }
 
-int dfs(int vertex, unordered_map<int, vector<int>> &adjacency, vector<int> &parents, unordered_set<int> &s) {
+template<typename T>
+bool Contain(const T &v, const vector<T> &vec) {
+    return find(begin(vec), end(vec), v) != end(vec);
+}
+
+int dfs(int vertex, const unordered_map<int, vector<int>> &adjacency, vector<int> &parents, const vector<int> &points) {
     vector<bool> visited(adjacency.size());
     queue<int> que;
     que.push(vertex);
@@ -32,13 +25,13 @@ int dfs(int vertex, unordered_map<int, vector<int>> &adjacency, vector<int> &par
     while (!que.empty()) {
         int v = que.front();
         que.pop();
-        for (size_t i = 0; i < adjacency[v].size(); ++i) {
-            int to = adjacency[v][i];
-            if (!visited[to] && !Contain(to, s)) {
+        for (size_t i = 0; i < adjacency.at(v).size(); ++i) {
+            int to = adjacency.at(v)[i];
+            if (!visited[to] && !(Contain(to, points))) {
                 visited[to] = true;
                 que.push(to);
                 parents[to] = v;
-            } else if (Contain(to, s) && !visited[to]) {
+            } else if (Contain(to, points) && !visited[to]) {
                 parents[to] = v;
                 return to;
             }
@@ -47,22 +40,17 @@ int dfs(int vertex, unordered_map<int, vector<int>> &adjacency, vector<int> &par
     return -1;
 }
 
-vector<int> FindAlphaPath(const Fragment &fragment, const vector<Line> &subgraph) {
-    unordered_set<int> subgraph_vertex;
-    for (const auto &line : subgraph) {
-        subgraph_vertex.insert(line.x);
-        subgraph_vertex.insert(line.y);
-    }
+vector<int> FindAlphaPath(const vector<pair<int, int>> &fragment, const vector<int> &points) {
     unordered_map<int, vector<int>> adjacency;
-    for (const auto &line : fragment.lines) {
-        adjacency[line.x].push_back(line.y);
-        adjacency[line.y].push_back(line.x);
+    for (const auto &line : fragment) {
+        adjacency[line.first].push_back(line.second);
+        adjacency[line.second].push_back(line.first);
     }
     vector<int> parents(adjacency.size());
     int last = 0;
-    for (const auto &vertex : subgraph_vertex) {
+    for (const auto &vertex : points) {
         if (Contain(vertex, adjacency)) {
-            last = dfs(vertex, adjacency, parents, subgraph_vertex);
+            last = dfs(vertex, adjacency, parents, points);
             break;
         }
     }
@@ -74,11 +62,10 @@ vector<int> FindAlphaPath(const Fragment &fragment, const vector<Line> &subgraph
 }
 int main() {
     //Пример применения
-    Fragment fr;
-    fr.lines = {{0, 1}, {1, 2}, {2, 3}};
-    vector<Line> subgraph;
-    subgraph.push_back({0, 3});
-    vector<int> ans = FindAlphaPath(fr, subgraph);
+
+    vector<pair<int, int>> p = {{0, 1}, {1, 2}, {2, 3}};
+    vector<int> subgraph = {0, 3};
+    vector<int> ans = FindAlphaPath(p, subgraph);
     for (const auto &x : ans) {
         cout << x << " ";//0 1 2 3
     }
