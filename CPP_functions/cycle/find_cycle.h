@@ -1,9 +1,5 @@
-#ifndef CYCLES_FIND_CYCLE_H
-#define CYCLES_FIND_CYCLE_H
-
+#pragma once
 #include <vector>
 using namespace std;
 
 vector<int> FindCycle(vector<pair<int, int>> &lines);
-
-#endif//CYCLES_FIND_CYCLE_H

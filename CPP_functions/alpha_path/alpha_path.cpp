@@ -60,14 +60,14 @@ vector<int> FindAlphaPath(const vector<pair<int, int>> &fragment, const vector<i
     }
     return cycle;
 }
-int main() {
-    //Пример применения
-
-    vector<pair<int, int>> p = {{0, 1}, {1, 2}, {2, 3}};
-    vector<int> subgraph = {0, 3};
-    vector<int> ans = FindAlphaPath(p, subgraph);
-    for (const auto &x : ans) {
-        cout << x << " ";//0 1 2 3
-    }
-    return 0;
-}
+//int main() {
+//    //Пример применения
+//
+//    vector<pair<int, int>> p = {{0, 1}, {1, 2}, {2, 3}};
+//    vector<int> subgraph = {0, 3};
+//    vector<int> ans = FindAlphaPath(p, subgraph);
+//    for (const auto &x : ans) {
+//        cout << x << " ";//0 1 2 3
+//    }
+//    return 0;
+//}
