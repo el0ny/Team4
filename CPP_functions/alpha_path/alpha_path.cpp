@@ -15,8 +15,8 @@ bool Contain(const T &v, const vector<T> &vec) {
     return find(begin(vec), end(vec), v) != end(vec);
 }
 
-int dfs(int vertex, const unordered_map<int, vector<int>> &adjacency, vector<int> &parents, const vector<int> &points) {
-    vector<bool> visited(adjacency.size());
+int bfs(int vertex, const unordered_map<int, vector<int>> &adjacency, unordered_map<int, int> &parents, const vector<int> &points) {
+    unordered_map<int, bool> visited(adjacency.size());
     queue<int> que;
     que.push(vertex);
     visited[vertex] = true;
@@ -46,11 +46,11 @@ vector<int> FindAlphaPath(const vector<pair<int, int>> &fragment, const vector<i
         adjacency[line.first].push_back(line.second);
         adjacency[line.second].push_back(line.first);
     }
-    vector<int> parents(adjacency.size());
+    unordered_map<int, int> parents;
     int last = 0;
     for (const auto &vertex : points) {
         if (Contain(vertex, adjacency)) {
-            last = dfs(vertex, adjacency, parents, points);
+            last = bfs(vertex, adjacency, parents, points);
             break;
         }
     }
@@ -62,12 +62,14 @@ vector<int> FindAlphaPath(const vector<pair<int, int>> &fragment, const vector<i
 }
 //int main() {
 //    //Пример применения
-//
+
 //    vector<pair<int, int>> p = {{0, 1}, {1, 2}, {2, 3}};
 //    vector<int> subgraph = {0, 3};
-//    vector<int> ans = FindAlphaPath(p, subgraph);
-//    for (const auto &x : ans) {
+//    vector<int> path = FindAlphaPath({{11, 5}, {6, 5}, {12, 11}, {10, 4}, {5, 4}, {11, 10}, {9, 3}, {2, 3}, {4, 3}, {8, 9}, {10, 9}},
+//                                     {6, 12, 2, 8});
+//    for (const auto &x : path) {
 //        cout << x << " ";//0 1 2 3
 //    }
 //    return 0;
 //}
+
