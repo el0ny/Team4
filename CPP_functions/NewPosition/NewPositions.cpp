@@ -1,7 +1,7 @@
 #include "NewPositions.h"
 
 std::pair<int, int>
-NewPosition(std::pair<int, int> cur_pos, const std::vector<std::pair<int, int>> &neighbours, int cool, int C) {
+NewPosition(std::pair<int, int> cur_pos, const std::vector<std::pair<int, int>> &neighbours, double cool, double C) {
     std::pair<double, double> cur_force(0, 0);
     for (auto neighbour : neighbours) {
         double distance_x = neighbour.first - cur_pos.first;
