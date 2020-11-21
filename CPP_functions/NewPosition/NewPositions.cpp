@@ -1,12 +1,12 @@
 #include "NewPositions.h"
 
-std::pair<int, int> NewPosition(
-        std::pair<int, std::pair<int, int>> cur_vertex,
-        const std::vector<std::pair<int, std::pair<int, int>>> &neighbours,
+std::pair<double, double> NewPosition(
+        std::pair<int, std::pair<double, double>> cur_vertex,
+        const std::vector<std::pair<int, std::pair<double, double>>> &neighbours,
         const std::vector<std::pair<int, int>> &graph,
         const std::vector<int> &external_face,
-        int cool,
-        int A) {
+        double cool,
+        double A) {
     std::map<int, int> distances = CalculateDistances(graph, external_face);
     int max_per = 0;
     for (auto vertex : distances) {
@@ -24,7 +24,7 @@ std::pair<int, int> NewPosition(
         cur_force.second += C * distance_y * distance_y * distance_y;
     }
     cur_vertex.second.first += std::min(static_cast<double>(cool), std::abs(cur_force.first)) *
-                               cur_force.first / std::abs(cur_force.first);
+                               (cur_force.first / std::abs(cur_force.first));
     cur_vertex.second.second += std::min(static_cast<double>(cool), std::abs(cur_force.second)) *
                                 cur_force.second / std::abs(cur_force.second);
     return cur_vertex.second;
