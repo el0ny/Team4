@@ -73,15 +73,15 @@ GetFragments(const std::vector<std::pair<int, int>> &graph, const std::vector<st
 }
 
 std::vector<int> GetAllowedFace(std::vector<int> main_points, std::vector<std::vector<int>> faces) {
-    std::vector<int> allowed_faces;
-    std::sort(main_points.begin(),main_points.end());
-    for (int i = 0; i < faces.size(); ++i) {
-        std::vector<int> intersection;
-        std::sort(faces[i].begin(), faces[i].end());
-        std::set_union(faces[i].begin(), faces[i].end(), main_points.begin(), main_points.end(), std::back_inserter(intersection));
-        if (intersection.size() == main_points.size()) {
-            allowed_faces.push_back(i);
-        }
-    }
-    return allowed_faces;
+	std::vector<int> allowed_faces;
+	std::sort(main_points.begin(), main_points.end());
+	for (int i = 0; i < faces.size(); ++i) {
+		std::vector<int> intersection;
+		std::sort(faces[i].begin(), faces[i].end());
+		std::set_intersection(faces[i].begin(), faces[i].end(), main_points.begin(), main_points.end(), std::back_inserter(intersection));
+		if (intersection.size() == main_points.size()) {
+			allowed_faces.push_back(i);
+		}
+	}
+	return allowed_faces;
 }

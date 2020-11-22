@@ -1,8 +1,11 @@
 from distutils.core import setup, Extension
 
 module = Extension('graphModule',
-                   sources=['cpyConverter.cpp', 'cycle/cycles.cpp', 'fragm_alwdFaces/func.cpp', 'alpha_path/alpha_path.cpp'],
-                   include_dirs=['cycle', 'fragm_alwdFaces', 'alpha_path'], language='c++')
+                   sources=['cpyConverter.cpp', 'cycle/cycles.cpp', 'new_position/new_positions.cpp',
+                            'fragm_alwdFaces/func.cpp', 'alpha_path/alpha_path.cpp',
+                            'CalculateDistances/CalculateDistances.cpp'],
+                   include_dirs=['cycle', 'fragm_alwdFaces', 'alpha_path',
+                                 'new_position', 'CalculateDistances'], language='c++')
 
 setup(name='PackageName',
       version='1.0',

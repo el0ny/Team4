@@ -1,76 +1,135 @@
 import pygame
-import json
-from graph import Graph, Point, Line, Face
-from graphModule import getCycle, getFragments, getAllowedFaces, getAlphaPath
-from make_planar import cycle_to_graph
-from draw import get_face_coordinates
-
+from py_modules.graph import Graph, Point, Line, Face, Post, Train
+from graphModule import getCycle
+from py_modules.make_planar import cycle_to_graph, draw_planar, prettify
+from py_modules.connector import get_map, get_info, close_conn
 
 screen_width = 1600
 screen_height = 900
-WHITE = (255, 255, 255)
-YELLOW = (225, 225, 0)
+
+
+def mouse_click(mouse_pos, points: dict, selected):
+    if selected is not None:
+        selected.selected = False
+    if 100 < mouse_pos[0] < 1000:
+        for point in points.values():
+            if point.coordinates[0]-7 < mouse_pos[0]-100 < point.coordinates[0]+7:
+                if point.coordinates[1] - 7 < mouse_pos[1] < point.coordinates[1] + 7:
+                    point.selected = True
+                    return point
+    return None
+
+
+# for future
+def event_alarm(events, screen):
+    for event in events:
+        print(event['type'])
+
+
+def update_map(posts, info):
+    for post in info['posts']:
+        posts[post['idx']].post.update(post)
+
+
+def update_screen(image, screen, subgraph):
+    image.fill((12, 12, 12))
+    screen.fill((0,0,0))
+    subgraph.draw(image, screen)
+    screen.blit(image, (100, 0))
+    pygame.display.update()
 
 
 def main():
-    with open("files/small_graph.json", "r") as read_file:
-        raw_graph = json.load(read_file)
-
-
+    player_info, first_layer_info, second_layer_info, sock = get_map()
+    raw_graph = first_layer_info
+    # with open("files/big_graph.json", "r") as read_file:
+    #     raw_graph = json.load(read_file)
     points = {}
     for point in raw_graph['points']:
         points[point['idx']] = Point(point['idx'], point['post_idx'])
+    points[player_info['home']['idx']].home = True
     lines = {}
     for line in raw_graph['lines']:
         point_list = [points[point] for point in line['points']]
-        lines[line['idx']] = Line(point_list, line['idx'], line['length'] )
-
+        point_list[0].adjacent_points.append(point_list[1])
+        point_list[1].adjacent_points.append(point_list[0])
+        lines[line['idx']] = Line(point_list, line['idx'], line['length'])
+    posts = {}
+    for post in second_layer_info['posts']:
+        points[post['point_idx']].post = Post(post)
+        posts[post['idx']] = points[post['point_idx']]
     graph = Graph(points, lines, raw_graph['name'], raw_graph['idx'])
-
     cycle = getCycle(graph.get_lines())
     subgraph = cycle_to_graph(graph, cycle)
     subgraph.faces.append(Face(subgraph.points, cycle))
     subgraph.faces.append(Face(subgraph.points, cycle))
-    while True:
-        fragments = getFragments(graph.get_lines(), subgraph.get_lines())
-        if not fragments:
-            break
-        allowed_faces_indexes = []
-        for fragment in fragments:
-            break_fragment = fragment
-            faces = subgraph.get_faces()
-            # allowed_faces_indexes.append(getAllowedFaces(sorted(fragment[0]), faces))
-            allowed_faces_indexes.append(getAllowedFaces(sorted(fragment[0]), [sorted(face) for face in faces]))
-            if len(allowed_faces_indexes[-1]) < 2:
-                break
-        alpha_path = getAlphaPath(break_fragment[0], break_fragment[1])
-        alpha_points = {point_idx: points[point_idx] for point_idx in alpha_path}
-        subgraph.points = {**alpha_points, **subgraph.points}
-        subgraph.change_face(alpha_path, allowed_faces_indexes[-1][0])
-        subgraph.lines = {**graph.get_lines_by_path(alpha_path), **subgraph.lines}
-        print("test")
-    N = len(cycle)
-    coords = get_face_coordinates(N)
-    i = 0
-    for point in graph.faces[0].points_dict:
-
-        point.set_coords(coords[0][i], coords[1][i])
-        i += 1
-    pygame.init()
+    prettify(graph, subgraph, points)
+    draw_planar(subgraph, points)
+    pygame.font.init()
+    pygame.display.init()
     sc = pygame.display.set_mode((screen_width, screen_height))
+    image = pygame.Surface([900, 900])
+    image.fill((12,12, 12))
 
-    graph.draw(sc)
+    graph.draw(image, sc)
 
-    # pygame.draw.arc(sc, WHITE, [80,10,250,1200], 3*math.pi/2, math.pi, 2)
-
+    trains = {train['idx']: Train(train) for train in player_info['trains']}
+    for train in trains.values():
+        train.set_line(lines[train.line_idx])
+    clock = pygame.time.Clock()
+    selected = None
+    sc.blit(image, (100, 0))
     pygame.display.update()
-
-    while 1:
-        pygame.time.delay(1000)
+    dragging = False
+    scale = 1
+    running = True
+    while running:
+        clock.tick(120)
         for i in pygame.event.get():
+            if i.type == pygame.KEYDOWN:
+                # if i.key == pygame.K_e:
+                #     for train in trains.values():
+                #         move_train(sock, 609, -1, train.idx)
+                if i.key == pygame.K_SPACE:
+                    info = get_info(sock)
+                    # if info['posts'][0][]
+                    update_map(posts, info)
+                    if selected is not None:
+                        selected.draw(image, sc)
+                    # for train in trains.values():
+                    #     # move_train(sock, train.get_possible_lines(), 1, train.idx)
+                    #     train.update(info['trains'][0])
+                    #     train.draw(image)
             if i.type == pygame.QUIT:
-                exit()
+                close_conn(sock)
+                running = False
+            if i.type == pygame.MOUSEBUTTONDOWN:
+                if i.button == 1:
+                    if selected is not None:
+                        selected.draw(image, sc)
+                    selected = mouse_click(i.pos, points, selected)
+                    sc.blit(image, (100, 0))
+                    pygame.display.update()
+                elif i.button == 2:
+                    old_mouse_x, old_mouse_y = i.pos
+                    dragging = True
+                elif i.button == 4:
+                    scale += 0.1
+                    subgraph.zoom(scale)
+                elif i.button == 5:
+                    scale -= 0.1
+                    subgraph.zoom(scale)
+            elif i.type == pygame.MOUSEBUTTONUP:
+                if i.button == 2:
+                    dragging = False
+            elif i.type == pygame.MOUSEMOTION:
+                if dragging:
+                    mouse_x, mouse_y = i.pos
+                    subgraph.move(mouse_x - old_mouse_x, mouse_y - old_mouse_y)
+                    old_mouse_x, old_mouse_y = i.pos
+            update_screen(image, sc, subgraph)
 
 
 if __name__ == '__main__':
-        main()
+    main()
+    raise SystemExit()

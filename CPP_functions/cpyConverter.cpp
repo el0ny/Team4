@@ -5,6 +5,8 @@
 #include "cycle/find_cycle.h"
 #include "fragm_alwdFaces/func.h"
 #include "alpha_path/find_alpha_path.h"
+#include "new_position/new_positions.h"
+#include "CalculateDistances/CalculateDistances.h"
 using namespace std;
 
 // Vector -> List
@@ -46,6 +48,24 @@ static vector<int> listToVector_Int(PyObject* incoming) {
         throw logic_error("Passed PyObject pointer was not a list or tuple!");
     }
 	return data;
+}
+static vector< pair<double, double> > listToVectorPair_Double(PyObject* incoming) {
+	vector<pair<double, double>> vect;
+    if (PyList_Check(incoming)) {
+        for(Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
+            PyObject *sublist = PyList_GetItem(incoming, i);
+            if (PyList_Check(sublist)) {
+
+                PyObject *first = PyList_GetItem(sublist, 0);
+                PyObject *second = PyList_GetItem(sublist, 1);
+                pair<double, double> subdata = { PyFloat_AsDouble(first),  PyFloat_AsDouble(second)};
+            vect.push_back( subdata );
+            }
+        }
+    } else {
+        throw logic_error("Passed PyObject pointer was not a list or tuple!");
+    }
+	return vect;
 }
 static vector< pair<int, int> > listToVectorPair_Int(PyObject* incoming) {
 	vector<pair<int, int>> vect;
@@ -157,17 +177,66 @@ static PyObject*  getAlphaPath(PyObject* self, PyObject* args)
     }
     vector<pair<int, int>> fragment = listToVectorPair_Int(pListFragment);
     vector<int> main_points = listToVector_Int(pListPoints);
-    vector<int> alpha_path = FindAlphaPath(fragment, main_points);
-
-
-    return vectorToList_Int(alpha_path);
+    return vectorToList_Int(FindAlphaPath(fragment, main_points));
 }
+static PyObject*  newPosition(PyObject* self, PyObject* args)
+{
+    PyObject *pListPosition;
+    PyObject *pListNeighbours;
+    double cool;
+    double constant;
+    if (!PyArg_ParseTuple(args, "O!O!dd", &PyList_Type, &pListPosition, &PyList_Type, &pListNeighbours, &cool, &constant))
+    {
+        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
+        return NULL;
+    }
+    PyObject *x = PyList_GetItem(pListPosition, 0);
+    PyObject *y = PyList_GetItem(pListPosition, 1);
+    pair<double, double> position = { PyFloat_AsDouble(x),  PyFloat_AsDouble(y)};
+
+    vector<pair<double, double>> neighbours = listToVectorPair_Double(pListNeighbours);
+    pair<double, double> new_pos = NewPosition(position, neighbours, cool, constant);
+    PyObject* coordinatesList = PyList_New(2);
+    PyObject* first = PyFloat_FromDouble(new_pos.first);
+	PyObject* second = PyFloat_FromDouble(new_pos.second);
+    PyList_SET_ITEM(coordinatesList, 0, first);
+    PyList_SET_ITEM(coordinatesList, 1, second);
+    return coordinatesList;
+}
+
+static PyObject*  calculateDistances(PyObject* self, PyObject* args)
+{
+    PyObject *pListGraph;
+    PyObject *pListFace;
+    double cool;
+    double constant;
+    if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListGraph, &PyList_Type, &pListFace))
+    {
+        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
+        return NULL;
+    }
+
+    vector<pair<int, int>> graph = listToVectorPair_Int(pListGraph);
+    vector<int> face = listToVector_Int(pListFace);
+    map<int, int> new_distances = CalculateDistances(graph, face);
+    PyObject* distancesDict = PyDict_New();
+
+    for (auto const& [key, val] : new_distances)
+    {
+        PyDict_SetItem(distancesDict, PyLong_FromLong(key), PyLong_FromLong(val));
+    }
+
+    return distancesDict;
+}
+
 static PyMethodDef myMethods[] =
 {
     {"getCycle", (PyCFunction)getCycle, METH_VARARGS, "returns cycle"},
     {"getFragments", (PyCFunction)getFragments, METH_VARARGS, "returns all fragments"},
     {"getAllowedFaces", (PyCFunction)getAllowedFaces, METH_VARARGS, "returns allowed faces"},
     {"getAlphaPath", (PyCFunction)getAlphaPath, METH_VARARGS, "returns alpha path"},
+    {"newPosition", (PyCFunction)newPosition, METH_VARARGS, "returns new position of a point"},
+    {"calculateDistances", (PyCFunction)calculateDistances, METH_VARARGS, "returns distance to outer edge for all points"},
     {NULL, NULL, 0, NULL}
 };
 
