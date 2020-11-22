@@ -1,8 +1,8 @@
 #include "NewPositions.h"
 
 std::pair<double, double> NewPosition(
-        std::pair<int, std::pair<double, double>> cur_vertex,
-        const std::vector<std::pair<int, std::pair<double, double>>> &neighbours,
+        int cur_vertex,
+        const std::vector<std::pair<int, std::pair<double, double>>> &coordinates,
         const std::vector<std::pair<int, int>> &graph,
         const std::vector<int> &external_face,
         double cool,
@@ -12,23 +12,32 @@ std::pair<double, double> NewPosition(
     for (auto vertex : distances) {
         max_per = std::max(max_per, vertex.second);
     }
-    std::pair<double, double> cur_force(0, 0);
-    for (auto neighbour : neighbours) {
-        double distance_x = neighbour.second.first - cur_vertex.second.first;
-        double distance_y = neighbour.second.second - cur_vertex.second.second;
-        double C = std::sqrt(distances.size() / 3.141592) * std::pow(2.718281, (2 * max_per
-                                                                                - distances[cur_vertex.first]
-                                                                                - distances[neighbour.first]) /
-                                                                               max_per * A);
-        cur_force.first += C * distance_x * distance_x * distance_x;
-        cur_force.second += C * distance_y * distance_y * distance_y;
+    std::unordered_map <int, std::pair<double, double>> index_to_coordinates;
+    for (auto vertex : coordinates) {
+        index_to_coordinates.insert(vertex);
     }
-    cur_vertex.second.first += std::min(static_cast<double>(cool), std::abs(cur_force.first)) *
+    std::pair<double, double> cur_force(0, 0);
+    for (auto line : graph) {
+        if (line.first == cur_vertex || line.second == cur_vertex) {
+            int neighbour = (cur_vertex == line.first) ? line.second : line.first;
+            double distance_x = index_to_coordinates[neighbour].first - index_to_coordinates[cur_vertex].first;
+            double distance_y = index_to_coordinates[neighbour].second - index_to_coordinates[cur_vertex].second;
+            double C = std::sqrt(distances.size() / 3.141592) * std::pow(2.718281, (2 * max_per
+                                                                                    - distances[cur_vertex]
+                                                                                    - distances[neighbour]) /
+                                                                                   max_per * A);
+            cur_force.first += C * distance_x * distance_x * distance_x;
+            cur_force.second += C * distance_y * distance_y * distance_y;
+        }
+    }
+    std::pair<double, double> new_position = index_to_coordinates[cur_vertex];
+    new_position.first += std::min(static_cast<double>(cool), std::abs(cur_force.first)) *
                                (cur_force.first / std::abs(cur_force.first));
-    cur_vertex.second.second += std::min(static_cast<double>(cool), std::abs(cur_force.second)) *
+    new_position.second += std::min(static_cast<double>(cool), std::abs(cur_force.second)) *
                                 cur_force.second / std::abs(cur_force.second);
-    return cur_vertex.second;
+    return new_position;
 }
+
 
 std::map<int, int> CalculateDistances(const std::vector<std::pair<int, int>> &graph,
                                       const std::vector<int> &external_face) {

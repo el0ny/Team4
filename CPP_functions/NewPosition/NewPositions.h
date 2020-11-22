@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <unordered_set>
+#include <unordered_map>
 #include <queue>
 #include "math.h"
 
@@ -13,8 +14,8 @@ std::map<int, int> CalculateDistances(const std::vector<std::pair<int, int>> &gr
 
 
 std::pair<double, double> NewPosition(
-        std::pair<int, std::pair<double, double>> cur_vertex,
-        const std::vector<std::pair<int, std::pair<double, double>>> &neighbours,
+        int cur_vertex,
+        const std::vector<std::pair<int, std::pair<double, double>>> &coordinates,
         const std::vector<std::pair<int, int>> &graph,
         const std::vector<int> &external_face,
         double cool,
