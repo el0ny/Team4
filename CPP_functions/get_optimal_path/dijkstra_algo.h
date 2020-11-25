@@ -2,5 +2,5 @@
 #include <vector>
 using namespace std;
 
-pair<vector<int>, vector<int>> GetOptimalPath(int begin_idx, int end_idx, const vector<pair<int, pair<int, int>>> &gr);
+vector<pair<int, int>> GetOptimalPath(int begin_idx, int end_idx, const vector<tuple<int, int, pair<int, int>>> &gr);
 

@@ -4,11 +4,14 @@
 #include <map>
 #include <set>
 
-pair<vector<int>, vector<int>> GetOptimalPath(int begin_idx, int end_idx, const vector<pair<int, pair<int, int>>> &gr) {
+//первая координата в тупле -- idx ребра, вторая -- его длина, затем идут смежные вершины
+vector<pair<int, int>> GetOptimalPath(int begin_idx, int end_idx, const vector<tuple<int, int, pair<int, int>>> &gr) {
     map<int, vector<pair<int, int>>> graph;
-    for (const auto& i : gr) {
-        graph[i.second.first].push_back({i.second.second, i.first});
-        graph[i.second.second].push_back({i.second.first, i.first});
+    map<pair<int, int>, int> idx_edges;
+    for (const auto &i : gr) {
+        graph[get<2>(i).first].push_back({get<2>(i).second, get<1>(i)});
+        graph[get<2>(i).second].push_back({get<2>(i).first, get<1>(i)});
+        idx_edges[get<2>(i)] = get<0>(i);
     }
     map<int, int> parents, distance;
     map<int, bool> visited;
@@ -37,36 +40,29 @@ pair<vector<int>, vector<int>> GetOptimalPath(int begin_idx, int end_idx, const 
     }
 
     vector<int> path, orientation;
+    vector<pair<int, int>> id_and_orient;
     for (int v = end_idx; v != begin_idx; v = parents[v]) {
         path.push_back(v);
     }
     path.push_back(begin_idx);
     reverse(path.begin(), path.end());
     for (size_t j = 0; j < path.size() - 1; j++) {
-        for (size_t i = 0; i < gr.size(); i++) {
-            if ((gr[i].second.first == path[j] && gr[i].second.second == path[j + 1])) {
-                orientation.push_back(1);
-                break;
-            } else if (gr[i].second.second == path[j] && gr[i].second.first == path[j + 1]) {
-                orientation.push_back(-1);
-                break;
-            }
+        if (idx_edges.count({path[j], path[j + 1]}) != 0) {
+            id_and_orient.emplace_back(idx_edges[{path[j], path[j + 1]}], 1);
+        } else {
+            id_and_orient.emplace_back(idx_edges[{path[j+1], path[j]}], -1);
         }
     }
 
-    return {path, orientation};
+    return id_and_orient;
 }
 
 int main() {
-    vector<pair<int, pair<int, int>>> gr{{7, {1, 2}}, {9, {1, 3}}, {10, {2, 3}}, {14, {1, 6}}, {2, {6, 3}}, {9, {6, 5}}, {6, {5, 4}}, {11, {3, 4}}, {15, {2, 4}}};
-    vector<int> path = GetOptimalPath(4, 6, gr).first;
+    vector<tuple<int, int, pair<int, int>>> gr{{0, 7, {1, 2}}, {1, 9, {1, 3}}, {2, 10, {2, 3}}, {3, 14, {1, 6}}, {4, 2, {6, 3}}, {5, 9, {6, 5}}, {6, 6, {5, 4}}, {7, 11, {3, 4}}, {8, 15, {2, 4}}};
+    vector<pair<int, int>> path = GetOptimalPath(4, 6, gr);
     for (const auto &i : path) {
-        cout << i << " ";
+        cout << i.first << " " << i.second << "\n";
     }
-    cout << "\n";
-    vector<int> orientation = GetOptimalPath(4, 6, gr).second;
-    for (const auto &i : orientation) {
-        cout << i << " ";
-    }
+
     return 0;
 }
