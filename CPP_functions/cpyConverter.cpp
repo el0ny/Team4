@@ -104,7 +104,7 @@ static vector<vector<int> > listToVectorVector_Int(PyObject *incoming) {
             PyObject *sublist = PyList_GetItem(incoming, i);
             if (PyList_Check(sublist)) {
                 vector<int> subdata;
-                for (Py_size_t j = 0; j < PyList_Size(sublist); ++j) { /
+                for (Py_size_t j = 0; j < PyList_Size(sublist); ++j) { 
                     PyObject *value = PyList_GetItem(sublist, j);
                     subdata.push_back(PyFloat_AsDouble(value));
                 }
@@ -166,7 +166,6 @@ static PyObject *getAllowedFaces(PyObject *self, PyObject *args) {
     return vectorToList_Int(allowedFaces);
 }
 
-
 static PyObject *getAlphaPath(PyObject *self, PyObject *args) {
     PyObject *pListFragment;
     PyObject *pListPoints;
@@ -178,7 +177,6 @@ static PyObject *getAlphaPath(PyObject *self, PyObject *args) {
     vector<int> mainPoints = listToVector_Int(pListPoints);
     return vectorToList_Int(FindAlphaPath(fragment, mainPoints));
 }
-
 
 static PyObject *newPosition(PyObject *self, PyObject *args) {
     PyObject *pListPosition;
