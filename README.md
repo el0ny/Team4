@@ -1,10 +1,10 @@
 # Team4 (SPyC team)
 <br/><br/>
-###Янина Сандрыгайло (yaninasan10)
+### Янина Сандрыгайло (yaninasan10)
 
-###Софья Сергеева (SofaSergeeva)
+### Софья Сергеева (SofaSergeeva)
 
-###Илья Онищук (el0ny)
+### Илья Онищук (el0ny)
 
 <br/><br/>
 In order to run the program you need python 3.8+ and gcc or g++.
