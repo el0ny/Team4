@@ -15,7 +15,7 @@ On Linux you also need to execute the following command:
 
 After that you can build the cpp module on both Linux and Windows by cd to the *CPP_functions* and execute
 
->sudo python setup.py install
+>python setup.py install
 
 Now you can run the main.py from command line by passing it a path to the json file. For example:
 
