@@ -7,6 +7,7 @@
 ### Илья Онищук (el0ny)
 
 <br/><br/>
+## Stage 1
 In order to run the program you need python 3.8+ and gcc or g++.
 On Linux you also need to execute the following command:
 
