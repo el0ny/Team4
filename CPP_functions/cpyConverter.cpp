@@ -1,4 +1,4 @@
-#include <Python.h> // Must be first
+#include <Python.h>
 #include <vector>
 #include <stdexcept>
 #include <set>
@@ -6,8 +6,7 @@
 #include "fragm_alwdFaces/func.h"
 #include "alpha_path/find_alpha_path.h"
 #include "new_position/new_positions.h"
-#include "CalculateDistances/CalculateDistances.h"
-
+#include "get_optimal_path/dijkstra_algo.h"
 using namespace std;
 
 // vector<int> -> List<int>
@@ -48,7 +47,7 @@ static PyObject *vectorPairToList_Int(const vector<pair<int, int>> &data) {
 static vector<int> listToVector_Int(PyObject *incoming) {
     vector<int> data;
     if (PyList_Check(incoming)) {
-        for (Py_size_t i = 0; i < PyList_Size(incoming); i++) {
+        for (Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
             PyObject *value = PyList_GetItem(incoming, i);
             data.push_back(PyFloat_AsDouble(value));
         }
@@ -62,13 +61,13 @@ static vector<int> listToVector_Int(PyObject *incoming) {
 static vector<pair<double, double>> listToVectorPair_Double(PyObject *incoming) {
     vector<pair<double, double>> data;
     if (PyList_Check(incoming)) {
-        for (Py_size_t i = 0; i < PyList_Size(incoming); i++) {
+        for (Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
             PyObject *sublist = PyList_GetItem(incoming, i);
             if (PyList_Check(sublist)) {
                 PyObject *first = PyList_GetItem(sublist, 0);
                 PyObject *second = PyList_GetItem(sublist, 1);
                 pair<double, double> subdata = {PyFloat_AsDouble(first), PyFloat_AsDouble(second)};
-                date.push_back(subdata);
+                data.push_back(subdata);
             }
         }
     } else {
@@ -81,7 +80,7 @@ static vector<pair<double, double>> listToVectorPair_Double(PyObject *incoming) 
 static vector<pair<int, int> > listToVectorPair_Int(PyObject *incoming) {
     vector<pair<int, int>> data;
     if (PyList_Check(incoming)) {
-        for (Py_size_t i = 0; i < PyList_Size(incoming); i++) {
+        for (Py_ssize_t i = 0; i < PyList_Size(incoming); i++) {
             PyObject *sublist = PyList_GetItem(incoming, i);
             if (PyList_Check(sublist)) {
                 PyObject *first = PyList_GetItem(sublist, 0);
@@ -100,11 +99,11 @@ static vector<pair<int, int> > listToVectorPair_Int(PyObject *incoming) {
 static vector<vector<int> > listToVectorVector_Int(PyObject *incoming) {
     vector<vector<int>> data;
     if (PyList_Check(incoming)) {
-        for (Py_size_t i = 0; i < PyList_Size(incoming); ++i) {
+        for (Py_ssize_t i = 0; i < PyList_Size(incoming); ++i) {
             PyObject *sublist = PyList_GetItem(incoming, i);
             if (PyList_Check(sublist)) {
                 vector<int> subdata;
-                for (Py_size_t j = 0; j < PyList_Size(sublist); ++j) { 
+                for (Py_ssize_t j = 0; j < PyList_Size(sublist); ++j) {
                     PyObject *value = PyList_GetItem(sublist, j);
                     subdata.push_back(PyFloat_AsDouble(value));
                 }
@@ -120,7 +119,7 @@ static vector<vector<int> > listToVectorVector_Int(PyObject *incoming) {
 static PyObject *getCycle(PyObject *self, PyObject *args) {
     PyObject *pList;
     if (!PyArg_ParseTuple(args, "O!", &PyList_Type, &pList)) {
-        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
         return NULL;
     }
     vector<pair<int, int>> data = listToVectorPair_Int(pList);
@@ -130,8 +129,9 @@ static PyObject *getCycle(PyObject *self, PyObject *args) {
 static PyObject *getFragments(PyObject *self, PyObject *args) {
     PyObject *pListGraph;
     PyObject *pListSubgraph;
-    if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListGraph, &PyList_Type, &pListSubgraph)) {
-        PyErr_SetString(PyExc_TypeError, "Passed PyObject pointer is not a list");
+    if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListGraph, &PyList_Type, &pListSubgraph))
+    {
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
         return NULL;
     }
     vector<pair<int, int>> graph = listToVectorPair_Int(pListGraph);
@@ -157,7 +157,7 @@ static PyObject *getAllowedFaces(PyObject *self, PyObject *args) {
     PyObject *pListMain;
     PyObject *pListFaces;
     if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListMain, &PyList_Type, &pListFaces)) {
-        PyErr_SetString(PyExc_TypeError, "Passed PyObject pointer is not a lis");
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
         return NULL;
     }
     vector<int> mainPoints = listToVector_Int(pListMain);
@@ -166,11 +166,12 @@ static PyObject *getAllowedFaces(PyObject *self, PyObject *args) {
     return vectorToList_Int(allowedFaces);
 }
 
-static PyObject *getAlphaPath(PyObject *self, PyObject *args) {
+static PyObject*  getAlphaPath(PyObject* self, PyObject* args)
+{
     PyObject *pListFragment;
     PyObject *pListPoints;
     if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListPoints, &PyList_Type, &pListFragment)) {
-        PyErr_SetString(PyExc_TypeError, "Passed PyObject pointer is not a lis");
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
         return NULL;
     }
     vector<pair<int, int>> fragment = listToVectorPair_Int(pListFragment);
@@ -185,7 +186,7 @@ static PyObject *newPosition(PyObject *self, PyObject *args) {
     double constant;
     if (!PyArg_ParseTuple(args, "O!O!dd", &PyList_Type, &pListPosition, &PyList_Type,
                           &pListNeighbours, &cool, &constant)) {
-        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
         return NULL;
     }
     PyObject *x = PyList_GetItem(pListPosition, 0);
@@ -201,42 +202,47 @@ static PyObject *newPosition(PyObject *self, PyObject *args) {
     return coordinatesList;
 }
 
-static PyObject *calculateDistances(PyObject *self, PyObject *args) {
+static PyObject*  getOptimalPath(PyObject* self, PyObject* args)
+{
+    int begin;
+    int end;
     PyObject *pListGraph;
-    PyObject *pListFace;
-    double cool;
-    double constant;
-    if (!PyArg_ParseTuple(args, "O!O!", &PyList_Type, &pListGraph, &PyList_Type, &pListFace)) {
-        PyErr_SetString(PyExc_TypeError, "parameter must be a list.");
-        return NULL;
+    if (!PyArg_ParseTuple(args, "iiO!", &begin, &end, &PyList_Type, &pListGraph))
+    {
+        PyErr_SetString(PyExc_TypeError, "Invalid parameters");
     }
-    vector<pair<int, int>> graph = listToVectorPair_Int(pListGraph);
-    vector<int> face = listToVector_Int(pListFace);
-    map<int, int> newDistances = CalculateDistances(graph, face);
-    PyObject *distancesDict = PyDict_New();
-    for (auto const&[key, val] : newDistances) {
-        PyDict_SetItem(distancesDict, PyLong_FromLong(key), PyLong_FromLong(val));
-    }
-    return distancesDict;
+    vector<tuple<int, int, pair<int, int>>> graph;
+
+    for(Py_ssize_t i = 0; i < PyList_Size(pListGraph); i++) {
+        PyObject *sublist = PyList_GetItem(pListGraph, i);
+        PyObject *pIdx = PyList_GetItem(sublist, 0);
+        PyObject *pLength = PyList_GetItem(sublist, 1);
+        PyObject *pPoints = PyList_GetItem(sublist, 2);
+        PyObject *pFirst = PyList_GetItem(pPoints, 0);
+        PyObject *pSecond = PyList_GetItem(pPoints, 1);
+        tuple<int, int, pair<int, int>> line = {PyLong_AsLong(pIdx), PyLong_AsLong(pLength), {PyLong_AsLong(pFirst), PyLong_AsLong(pSecond)}};
+        graph.push_back(line);
+       }
+    return vectorPairToList_Int(GetOptimalPath(begin, end, graph));
 }
 
 static PyMethodDef myMethods[] =
-        {
-                {"getCycle",           (PyCFunction) getCycle,           METH_VARARGS, "returns cycle"},
-                {"getFragments",       (PyCFunction) getFragments,       METH_VARARGS, "returns all fragments"},
-                {"getAllowedFaces",    (PyCFunction) getAllowedFaces,    METH_VARARGS, "returns allowed faces"},
-                {"getAlphaPath",       (PyCFunction) getAlphaPath,       METH_VARARGS, "returns alpha path"},
-                {"newPosition",        (PyCFunction) newPosition,        METH_VARARGS, "returns new position of a point"},
-                {"calculateDistances", (PyCFunction) calculateDistances, METH_VARARGS, "returns distance to outer edge for all points"},
-                {NULL, NULL,                                             0, NULL}
-        };
+{
+        {"getCycle",           (PyCFunction) getCycle,           METH_VARARGS, "returns cycle"},
+        {"getFragments",       (PyCFunction) getFragments,       METH_VARARGS, "returns all fragments"},
+        {"getAllowedFaces",    (PyCFunction) getAllowedFaces,    METH_VARARGS, "returns allowed faces"},
+        {"getAlphaPath",       (PyCFunction) getAlphaPath,       METH_VARARGS, "returns alpha path"},
+        {"newPosition",        (PyCFunction) newPosition,        METH_VARARGS, "returns new position of a point"},
+        {"getOptimalPath",     (PyCFunction)getOptimalPath,      METH_VARARGS, "returns best path to from one point to another"},
+        {NULL, NULL,                                             0, NULL}
+};
 
 static struct PyModuleDef graphModule = {
-        PyModuleDef_HEAD_INIT,
-        "graphModule",
-        "Module with cpp graph functions",
-        -1,
-        myMethods
+	PyModuleDef_HEAD_INIT,
+	"graphModule",
+	"Module with cpp graph functions",
+	-1,
+	myMethods
 };
 
 PyMODINIT_FUNC PyInit_graphModule(void) {

@@ -1,10 +1,56 @@
+""" Module for creating planar graph """
 from py_modules.graph import *
-from math import pi
-from graphModule import getFragments, getAllowedFaces, getAlphaPath, newPosition, calculateDistances
-from py_modules.draw import get_face_coordinates
+from math import cos, sin, pi
+from graphModule import getFragments, getAllowedFaces, getAlphaPath, newPosition, getCycle
 
 
-def cycle_to_graph(graph, cycle):
+def create_graph(raw_graph):
+    points = {}
+    lines = {}
+    for point in raw_graph['points']:
+        points[point['idx']] = Point(point['idx'], point['post_idx'])
+    for line in raw_graph['lines']:
+        point_list = [points[point] for point in line['points']]
+        point_list[0].adjacent_points.append(point_list[1])
+        point_list[1].adjacent_points.append(point_list[0])
+        lines[line['idx']] = Line(point_list, line['idx'], line['length'])
+
+    graph = Graph(points, lines, raw_graph['name'], raw_graph['idx'])
+    cycle = getCycle(graph.get_lines())
+    subgraph = cycle_to_graph(graph, cycle)
+    subgraph.faces.append(Face(subgraph.points, cycle))
+    subgraph.faces.append(Face(subgraph.points, cycle))
+
+    prettify(graph, subgraph, points)
+    draw_planar(subgraph, points)
+    return points, lines, subgraph
+
+
+def get_face_coordinates(N):
+    """
+    Creates point coordinates for outer edge
+    :param N: number of outer edge points
+    :return: a list of coordinates
+    """
+    r = 400
+    screen_width = 900
+    screen_height = 900
+    x = {}
+    y = {}
+    for n in range(N):
+        x[n] = int(r * cos(2*pi*n/N) + screen_width//2)
+        y[n] = int(r * sin(2*pi*n/N) + screen_height//2)
+
+    return [x, y]
+
+
+def cycle_to_graph(graph: Graph, cycle: list) -> Graph:
+    """
+    Creates a Graph from cycle and graph
+    :param graph: existing graph
+    :param cycle: a cicle in graph
+    :return: new graph
+    """
     subgraph = Graph()
     point_pairs = []
     for i in range(len(cycle)):
@@ -15,7 +61,14 @@ def cycle_to_graph(graph, cycle):
     return subgraph
 
 
-def prettify(graph, subgraph, points):
+def prettify(graph: Graph, subgraph: Graph, points: dict):
+    """
+    Finds and adds all faces of the subgraph
+    :param graph: origin graph
+    :param subgraph: new graph
+    :param points: dict of points
+    :return: None
+    """
     while True:
         fragments = getFragments(graph.get_lines(), subgraph.get_lines())
         if not fragments:
@@ -33,10 +86,15 @@ def prettify(graph, subgraph, points):
         subgraph.lines = {**graph.get_lines_by_path(alpha_path), **subgraph.lines}
 
 
-def draw_planar(subgraph, points):
+def draw_planar(subgraph: Graph, points: dict):
+    """
+    Assigns the coordinates of all points of the graph
+    :param subgraph: the graph
+    :param points: a dict of points
+    :return: None
+    """
     face = subgraph.get_biggest_face()
-    N = len(face.points_list)
-    coords = get_face_coordinates(N)
+    coords = get_face_coordinates(len(face.points_list))
     i = 0
     inner_points = dict(points)
     for point in face.points_dict.values():
@@ -46,13 +104,11 @@ def draw_planar(subgraph, points):
     for point in inner_points.values():
         point.set_coords(random.randrange(screen_width // 2 - 150, screen_width // 2 + 150),
                          random.randrange(screen_height // 2 - 150, screen_height // 2 + 150))
-
     n = len(points)
-    const = get_const(n)
-    delta = 1
+    const = (n/pi)**0.5
+    delta = 0.5
     old_coords = {}
-    cool = get_cool(n, i)
-    periphericity = calculateDistances(subgraph.get_lines(), face.get_points())
+    cool = (pi/n)**0.5/(1 + pi / n * i ** 1.5)
     while 1:
         for point in inner_points.values():
             old_coords[point.idx] = point.coordinates
@@ -70,14 +126,3 @@ def draw_planar(subgraph, points):
                 stop = False
         if stop:
             break
-
-
-def get_const(n):
-    return (n/pi)**0.5
-
-
-def get_cool(n, i):
-    return (pi/n)**0.5/(1 + pi / n * i ** 1.5)
-
-
-

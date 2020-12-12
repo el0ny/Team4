@@ -57,12 +57,12 @@ vector<pair<int, int>> GetOptimalPath(int begin_idx, int end_idx, const vector<t
     return id_and_orient;
 }
 
-int main() {
-    vector<tuple<int, int, pair<int, int>>> gr{{0, 7, {1, 2}}, {1, 9, {1, 3}}, {2, 10, {2, 3}}, {3, 14, {1, 6}}, {4, 2, {6, 3}}, {5, 9, {6, 5}}, {6, 6, {5, 4}}, {7, 11, {3, 4}}, {8, 15, {2, 4}}};
-    vector<pair<int, int>> path = GetOptimalPath(4, 6, gr);
-    for (const auto &i : path) {
-        cout << i.first << " " << i.second << "\n";
-    }
-
-    return 0;
-}
+//int main() {
+//    vector<tuple<int, int, pair<int, int>>> gr{{0, 7, {1, 2}}, {1, 9, {1, 3}}, {2, 10, {2, 3}}, {3, 14, {1, 6}}, {4, 2, {6, 3}}, {5, 9, {6, 5}}, {6, 6, {5, 4}}, {7, 11, {3, 4}}, {8, 15, {2, 4}}};
+//    vector<pair<int, int>> path = GetOptimalPath(4, 6, gr);
+//    for (const auto &i : path) {
+//        cout << i.first << " " << i.second << "\n";
+//    }
+//
+//    return 0;
+//}
