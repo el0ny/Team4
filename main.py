@@ -8,9 +8,9 @@ This this the starting function of the project. Here the Game class is created a
 import pygame
 import sys
 
-# from py_modules.graph import Post, Train, Dispatcher
+from py_modules.graph import Post #, Train, Dispatcher
 from py_modules.make_planar import create_graph
-# from py_modules.connector import Connector
+from py_modules.connector import Connector
 import json
 
 screen_width = 1600
@@ -41,24 +41,23 @@ class Game:
         self.image = pygame.Surface([900, 900])
 
     def run(self):
-        # connector = Connector()
-        # player_info, first_layer_info, second_layer_info = connector.get_map()
-        # raw_graph = first_layer_info
-        # player_idx = player_info['idx']
-        file = sys.argv[1]
         try:
-            with open(file, "r") as read_file:
-                raw_graph = json.load(read_file)
-            points, lines, subgraph = create_graph(raw_graph)
-        except IOError:
-            print('ERROR: wrong file was selected')
-            self.running = False
-        # subgraph.home = points[player_info['home']['idx']]
-        # posts = {}
-        # for post in second_layer_info['posts']:
-        #     points[post['point_idx']].post = Post(post)
-        #     posts[post['idx']] = points[post['point_idx']]
-        # subgraph.posts = posts
+            connector = Connector()
+        except Exception as e:
+            print("something's wrong with the server. Exception is %s" % (e))
+            return
+        player_info, zero_layer_info, first_layer_info = connector.get_map()
+        raw_graph = zero_layer_info
+        player_idx = player_info['idx']
+        points, lines, subgraph = create_graph(raw_graph)
+
+        subgraph.home = points[player_info['home']['idx']]
+        posts = {}
+        for post in first_layer_info['posts']:
+            points[post['point_idx']].post = Post(post)
+            posts[post['idx']] = points[post['point_idx']]
+        subgraph.posts = posts
+
         # trains = {train['idx']: Train(train) for train in player_info['trains']}
         # subgraph.trains = trains
         # for train in trains.values():
@@ -92,7 +91,7 @@ class Game:
                 #             train.update(info['trains'][0])
 
                 if event.type == pygame.QUIT:
-                    # connector.close_conn()
+                    connector.close_conn()
                     self.running = False
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if event.button == 1:
@@ -136,10 +135,10 @@ class Game:
         return None
 
 
-    # def update_map(self, posts, info):
-    #     event_alarm(info['posts'][0]['events'])
-    #     for post in info['posts']:
-    #         posts[post['idx']].post.update(post)
+    def update_map(self, posts, info):
+        event_alarm(info['posts'][0]['events'])
+        for post in info['posts']:
+            posts[post['idx']].post.update(post)
 
     def update_screen(self, subgraph):
         """

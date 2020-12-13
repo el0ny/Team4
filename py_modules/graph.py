@@ -188,56 +188,54 @@ class Graph:
     #                           [[line.idx, line.length, line.get_points()] for line in self.lines.values()])
 
 
-# class Post:
-#     def __init__(self, post_dict: dict):
-#         self.name = post_dict['name']
-#         self.idx = post_dict['point_idx']
-#         self.post_idx = post_dict['idx']
-#         self.type = post_dict['type']
-#         if self.type == 1:
-#             self.image_path = "pictures/city.png"
-#             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
-#             self.population = (post_dict['population'], post_dict['population_capacity'])
-#             self.product = (post_dict['product'], post_dict['product_capacity'])
-#         elif self.type == 2:
-#             self.image_path = "pictures/shop.png"
-#             self.product = (post_dict['product'], post_dict['product_capacity'])
-#             self.replenishment = post_dict['replenishment']
-#         elif self.type == 3:
-#             self.image_path = "pictures/armour.png"
-#             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
-#             self.replenishment = post_dict['replenishment']
-#
-#         image = pygame.image.load(self.image_path).convert_alpha()
-#         self.image = pygame.transform.scale(image, (20, 20))
-#
-#     def get_info(self) -> dict:
-#         info = {'name': [self.name], 'idx': [self.idx]}
-#         if self.type == 1:
-#             info['armor'] = [self.armor[0], self.armor[1]]
-#             info['population'] = [self.population[0], self.population[1]]
-#             info['product'] = [self.product[0], self.product[1]]
-#         elif self.type == 2:
-#             info['replenishment'] = [self.replenishment]
-#             info['product'] = [self.product[0], self.product[1]]
-#         elif self.type == 3:
-#             info['replenishment'] = [self.replenishment]
-#             info['armor'] = [self.armor[0], self.armor[1]]
-#         return info
-#
-#     def update(self, post_dict: dict):
-#         if self.type == 1:
-#             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
-#             self.population = (post_dict['population'], post_dict['population_capacity'])
-#             self.product = (post_dict['product'], post_dict['product_capacity'])
-#         elif self.type == 2:
-#             self.product = (post_dict['product'], post_dict['product_capacity'])
-#             # self.replenishment = post_dict['replenishment']
-#         elif self.type == 3:
-#             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
-#             # self.replenishment = post_dict['replenishment']
-#
-#
+class Post:
+    def __init__(self, post_dict: dict):
+        self.name = post_dict['name']
+        self.idx = post_dict['point_idx']
+        self.post_idx = post_dict['idx']
+        self.type = post_dict['type']
+        if self.type == 1:
+            self.image_path = "pictures/city.png"
+            self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+            self.population = (post_dict['population'], post_dict['population_capacity'])
+            self.product = (post_dict['product'], post_dict['product_capacity'])
+        elif self.type == 2:
+            self.image_path = "pictures/shop.png"
+            self.product = (post_dict['product'], post_dict['product_capacity'])
+            self.replenishment = post_dict['replenishment']
+        elif self.type == 3:
+            self.image_path = "pictures/armour.png"
+            self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+            self.replenishment = post_dict['replenishment']
+
+        image = pygame.image.load(self.image_path).convert_alpha()
+        self.image = pygame.transform.scale(image, (20, 20))
+
+    def get_info(self) -> dict:
+        info = {'name': [self.name], 'idx': [self.idx]}
+        if self.type == 1:
+            info['armor'] = [self.armor[0], self.armor[1]]
+            info['population'] = [self.population[0], self.population[1]]
+            info['product'] = [self.product[0], self.product[1]]
+        elif self.type == 2:
+            info['replenishment'] = [self.replenishment]
+            info['product'] = [self.product[0], self.product[1]]
+        elif self.type == 3:
+            info['replenishment'] = [self.replenishment]
+            info['armor'] = [self.armor[0], self.armor[1]]
+        return info
+
+    def update(self, post_dict: dict):
+        if self.type == 1:
+            self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+            self.population = (post_dict['population'], post_dict['population_capacity'])
+            self.product = (post_dict['product'], post_dict['product_capacity'])
+        elif self.type == 2:
+            self.product = (post_dict['product'], post_dict['product_capacity'])
+        elif self.type == 3:
+            self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+
+
 # class Train:
 #     def __init__(self, train_dict: dict):
 #         self.idx = train_dict['idx']
