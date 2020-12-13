@@ -273,7 +273,8 @@ class Train:
 
     def draw(self, screen, surface):
         pygame.draw.rect(screen, BLACK, (1400, 0, 100, 100), 0)
-        info = {'current line': [str(self.line_idx)], 'position': [self.position, self.line.length], 'type of goods': [self.goods_type], 'goods': self.goods}
+        info = {'current line': [str(self.line_idx)], 'position': [self.position, self.line.length],
+                'type of goods': [str(self.goods_type)], 'goods': self.goods}
         i = 0
         for key, value in info.items():
             if len(value) == 1:
@@ -298,6 +299,7 @@ class Train:
         self.line_idx = train_dict['line_idx']
         self.position = train_dict['position']
         self.speed = train_dict['speed']
+        self.goods_type = train_dict['goods_type']
 
 
 class Dispatcher:
