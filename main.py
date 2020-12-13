@@ -11,7 +11,6 @@ import sys
 from py_modules.graph import Post #, Train, Dispatcher
 from py_modules.make_planar import create_graph
 from py_modules.connector import Connector
-import json
 
 screen_width = 1600
 screen_height = 900
@@ -48,10 +47,10 @@ class Game:
             return
         player_info, zero_layer_info, first_layer_info = connector.get_map()
         raw_graph = zero_layer_info
-        player_idx = player_info['idx']
         points, lines, subgraph = create_graph(raw_graph)
 
         subgraph.home = points[player_info['home']['idx']]
+        points[player_info['home']['idx']].home = True
         posts = {}
         for post in first_layer_info['posts']:
             points[post['point_idx']].post = Post(post)
@@ -83,10 +82,10 @@ class Game:
                 #         info = connector.get_info()
                 #         if info is None:
                 #             info = connector.get_info()
-                #         update_map(posts, info)
+                #         self.update_map(posts, info)
                 #         subgraph.rating = info['ratings'][player_idx]['rating']
-                #         if selected is not None:
-                #             selected.draw(image, sc)
+                #         if self.selected is not None:
+                #             self.selected.draw(self.image, self.sc)
                 #         for train in trains.values():
                 #             train.update(info['trains'][0])
 
@@ -136,7 +135,6 @@ class Game:
 
 
     def update_map(self, posts, info):
-        event_alarm(info['posts'][0]['events'])
         for post in info['posts']:
             posts[post['idx']].post.update(post)
 
