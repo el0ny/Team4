@@ -46,8 +46,8 @@ class Connector:
         message = '{"line_idx":%d,"speed":%d,"train_idx":%d}' % (line_idx, speed, train_idx)
         move = self.send_message(3, message)
 
-    def upgrade(self):
-        message = '{"posts":[],"trains":[1]}' #% (line_idx, speed, train_idx)
+    def upgrade(self, upgrade_dict):
+        message = '{"posts":%s,"trains":%s}' % (str(upgrade_dict['posts']), str(upgrade_dict['trains']))
         self.send_message(4, message)
 
     def close_conn(self):

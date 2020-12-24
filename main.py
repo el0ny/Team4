@@ -1,7 +1,4 @@
 """
-Disclaimer:
-This project has a lot of commented lines of the next steps. In the next prs they will be uncommented
-
 This this the starting function of the project. Here the Game class is created and is being run.
 """
 
@@ -56,7 +53,6 @@ class Game:
             points[post['point_idx']].post = Post(post)
             posts[post['idx']] = points[post['point_idx']]
         subgraph.posts = posts
-
         trains = {train['idx']: Train(train) for train in player_info['trains']}
         subgraph.trains = trains
         for train in trains.values():
@@ -67,8 +63,6 @@ class Game:
             self.clock.tick(120)
             for event in pygame.event.get():
                 if event.type == pygame.KEYDOWN:
-                #     if event.key == pygame.K_u:
-                #         connector.upgrade()
                     if event.key == pygame.K_SPACE:
                         disp.do_tasks()
                         info = connector.get_info()
@@ -76,8 +70,10 @@ class Game:
                 #         subgraph.rating = info['ratings'][player_idx]['rating']
                         if self.selected is not None:
                             self.selected.draw(self.image, self.sc)
-                        for train in trains.values():
-                            train.update(info['trains'][0])
+                        for key, train in trains.items():
+                            train.update(info['trains'][key-1])
+
+                        self.update_screen(subgraph)
 
                 if event.type == pygame.QUIT:
                     connector.close_conn()
@@ -96,6 +92,7 @@ class Game:
                         subgraph.zoom(0.1)
                     elif event.button == 5:
                         subgraph.zoom(-0.1)
+                    self.update_screen(subgraph)
                 elif event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 3:
                         self.dragging = False
@@ -104,7 +101,8 @@ class Game:
                         mouse_x, mouse_y = event.pos
                         subgraph.move(mouse_x - old_mouse_x, mouse_y - old_mouse_y)
                         old_mouse_x, old_mouse_y = event.pos
-                self.update_screen(subgraph)
+                    self.update_screen(subgraph)
+
 
     def mouse_click(self, mouse_pos: tuple, points: dict):
         """

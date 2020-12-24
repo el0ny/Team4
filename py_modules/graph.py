@@ -20,10 +20,11 @@ GREEN = (0, 200, 0)
 DARK_GREEN = (0, 100, 0)
 colors = [YELLOW, RED, GREEN, BLUE, WHITE]
 type_colors = {"armor": [BLUE, DARK_BLUE], "population": [RED, DARK_RED], "product": [GREEN, DARK_GREEN]}
+train_colors = {1: (255, 255, 120), 2: (120, 255, 255), 3: (255, 120, 255)}
 
 
 class Point:
-    def __init__(self, idx: int, post_idx: int=None, coordinates: list=None):
+    def __init__(self, idx: int, post_idx: int = None, coordinates: list = None):
         self.idx = idx
         self.post_idx = post_idx
         self.original_coordinates = coordinates
@@ -181,7 +182,7 @@ class Graph:
             point.coordinates[1] += y
 
     def zoom(self, scale_increase):
-        if 1 <= self.scale+scale_increase <= 3:
+        if 1 <= self.scale + scale_increase <= 3:
             self.scale += scale_increase
         for point in self.points.values():
             point.coordinates[0] = point.coordinates[0] / point.scale * self.scale
@@ -209,13 +210,14 @@ class Post:
             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
             self.population = (post_dict['population'], post_dict['population_capacity'])
             self.product = (post_dict['product'], post_dict['product_capacity'])
+            self.upgrade_cost = post_dict['next_level_price']
         elif self.type == 2:
             # self.image_path = "pictures/shop.png"
-            self.product = (post_dict['product'], post_dict['product_capacity'])
+            self.resource = (post_dict['product'], post_dict['product_capacity'])
             self.replenishment = post_dict['replenishment']
         elif self.type == 3:
             # self.image_path = "pictures/armour.png"
-            self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+            self.resource = (post_dict['armor'], post_dict['armor_capacity'])
             self.replenishment = post_dict['replenishment']
 
         # image = pygame.image.load(self.resource_path()).convert_alpha()
@@ -239,10 +241,10 @@ class Post:
             info['product'] = [self.product[0], self.product[1]]
         elif self.type == 2:
             info['replenishment'] = [self.replenishment]
-            info['product'] = [self.product[0], self.product[1]]
+            info['product'] = [self.resource[0], self.resource[1]]
         elif self.type == 3:
             info['replenishment'] = [self.replenishment]
-            info['armor'] = [self.armor[0], self.armor[1]]
+            info['armor'] = [self.resource[0], self.resource[1]]
         return info
 
     def update(self, post_dict: dict):
@@ -250,10 +252,15 @@ class Post:
             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
             self.population = (post_dict['population'], post_dict['population_capacity'])
             self.product = (post_dict['product'], post_dict['product_capacity'])
+            self.upgrade_cost = post_dict['next_level_price']
         elif self.type == 2:
             self.product = (post_dict['product'], post_dict['product_capacity'])
         elif self.type == 3:
             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+
+    def get_income(self, last_visit, turns):
+        income = min((turns - last_visit) * self.replenishment, self.resource[1])
+        return income
 
 
 class Train:
@@ -267,29 +274,37 @@ class Train:
         self.coordinates = [0, 0]
         self.font = pygame.font.SysFont('arial', 20)
         self.goods_type = train_dict['goods_type']
+        self.upgrade_cost = train_dict['next_level_price']
 
     def set_line(self, line: Line):
         self.line = line
 
     def draw(self, screen, surface):
-        pygame.draw.rect(screen, BLACK, (1400, 0, 100, 100), 0)
+        threshold = (self.idx-1) * 150
         info = {'current line': [str(self.line_idx)], 'position': [self.position, self.line.length],
                 'type of goods': [str(self.goods_type)], 'goods': self.goods}
-        i = 0
+        i = 5
         for key, value in info.items():
             if len(value) == 1:
                 text2 = self.font.render(value[0], True, WHITE)
             else:
                 text2 = self.font.render('{0}/{1}'.format(value[0], value[1]), True, WHITE)
             text1 = self.font.render(key, True, WHITE)
-            screen.blit(text1, (1300, i))
-            screen.blit(text2, (1500, i))
+            screen.blit(text1, (1300, threshold+i))
+            screen.blit(text2, (1500, threshold+i))
             i += 30
         step_x = (self.line.points[1].coordinates[0] - self.line.points[0].coordinates[0]) / self.line.length
         step_y = (self.line.points[1].coordinates[1] - self.line.points[0].coordinates[1]) / self.line.length
         self.coordinates[0] = self.line.points[0].coordinates[0] + step_x * self.position
         self.coordinates[1] = self.line.points[0].coordinates[1] + step_y * self.position
-        pygame.draw.rect(surface, (255, 0, 255), (int(self.coordinates[0])-8, int(self.coordinates[1])-8, 16, 16), 1)
+        pygame.draw.rect(screen,
+                         train_colors[self.idx],
+                         (1250, threshold+5, 300, 120), 1)
+        pygame.draw.rect(surface,
+                         train_colors[self.idx],
+                         (int(self.coordinates[0]) - 8, int(self.coordinates[1]) - 8,
+                          16,
+                          16), 1)
 
     def get_possible_lines(self):
         return self.line_idx
@@ -300,6 +315,7 @@ class Train:
         self.position = train_dict['position']
         self.speed = train_dict['speed']
         self.goods_type = train_dict['goods_type']
+        self.upgrade_cost = train_dict['next_level_price']
 
 
 class Dispatcher:
@@ -309,13 +325,26 @@ class Dispatcher:
         self.rem_length = 0
         self.train_path = None
         self.best_paths = {}
+        self.finite_paths = {2: {}, 3: {}}
         self.train_tasks = {}
         self.income_losses = {2: [], 3: []}
         self.post_rating = {2: [], 3: []}
+        self.arrival_dict = {}
         self.home = graph.home
         self.connector = connector
+        self.train_paths = {40: {2: [], 3: []}, 80: {2: [], 3: []}, 160: {2: [], 3: []}}
+
+        self.upgrade_dict = {'posts': [], 'trains': []}
         for idx, post in self.graph.posts.items():
             self.posts[post.post.type][post.idx] = post
+
+    def count_start_income(self):
+        for post_type, paths in self.finite_paths.items():
+            for path_idx, path in paths.items():
+                path.get_income()
+                for key in self.train_paths.keys():
+                    # if path.income >= key:
+                    self.train_paths[key][post_type].append(path_idx)
 
     def get_best_path(self, point_a, point_b, train_lines=None, excluded_points=None):
         """
@@ -329,7 +358,8 @@ class Dispatcher:
         lines_list = []
         for line in self.graph.lines.values():
             points = line.get_points()
-            if excluded_points is None or (points[0] not in excluded_points.keys() and points[1] not in excluded_points.keys()):
+            if excluded_points is None or (
+                    points[0] not in excluded_points.keys() and points[1] not in excluded_points.keys()):
                 lines_list.append([line.idx, line.length, line.get_points()])
         if train_lines is not None:
             lines_list += train_lines
@@ -357,12 +387,27 @@ class Dispatcher:
         """
         for train, paths in self.train_tasks.items():
             if paths[0].move(train) is False:
-                paths.pop(0)
-                if paths:
-                    paths[0].move(train)
-                else:
-                    self.assign_tasks()
-                    self.do_tasks()
+                self.assign_tasks(train)
+                # paths.pop(0)
+                # if paths:
+                #     paths[0].move(train)
+                # else:
+                #     self.assign_tasks(train)
+                #     print('recur')
+                #     self.do_tasks()
+                #     print('recur2')
+
+    def add_path(self, start, end, post_type, excluded_points=None, post=None):
+        path = self.get_best_path(start, end, excluded_points=excluded_points)
+        distance = 0
+        posts = {}
+        for line in path:
+            line.append(self.graph.lines[line[0]].length)
+            distance += line[2]
+            point = self.graph.lines[line[0]].points[0] if line[1] == -1 else self.graph.lines[line[0]].points[1]
+            if point.post is not None and post_type == point.post.type:
+                posts[distance] = point.post
+        self.best_paths[(start, end)] = Path(path, start, end, distance, self.connector, post_type, posts)
 
     def get_paths(self, post_type, start):
         """
@@ -374,21 +419,39 @@ class Dispatcher:
         comeback_distances = []
         for idx, post in self.posts[post_type].items():
             excluded_points = self.posts[2] if post_type == 3 else self.posts[3]
-            path = self.get_best_path(start, idx, excluded_points=excluded_points)
-            distance = 0
-            for line in path:
-                line.append(self.graph.lines[line[0]].length)
-                distance += line[2]
-            path_back = self.get_best_path(idx, start)
-            distance_back = 0
-            for line in path_back:
-                line.append(self.graph.lines[line[0]].length)
-                distance_back += line[2]
-            self.best_paths[(start, idx)] = Path(path, start, idx, distance, self.connector)
-            self.best_paths[(idx, start)] = Path(path_back, idx, start, distance_back, self.connector)
-            comeback_distances.append((idx, distance+distance_back))
-        comeback_distances.sort(key=lambda full_distance: full_distance[1])
-        self.post_rating[post_type] = comeback_distances
+            self.add_path(start, idx, post_type, excluded_points=excluded_points, post=self.graph.points[idx])
+            self.add_path(idx, start, post_type)
+            for idx2, post2 in self.posts[post_type].items():
+                if idx2 != idx:
+                    self.add_path(idx, idx2, post_type, post=self.graph.points[idx2])
+        for idx, post in self.posts[post_type].items():
+            for idx2, post2 in self.posts[post_type].items():
+                if idx2 != idx:
+                    self.finite_paths[post_type][(start, idx, idx2, start)] = \
+                        self.combine_paths(self.best_paths[(start, idx)],
+                                           self.best_paths[(idx, idx2)],
+                                           self.best_paths[(idx2, start)])
+                else:
+                    self.finite_paths[post_type][(start, idx, start)] = \
+                        self.combine_paths(self.best_paths[(start, idx)],
+                                           self.best_paths[(idx, start)])
+                    # print(str(start)+' '+str(idx)+' '+str(idx2))
+                    # print(self.best_paths[(start, idx)].length+self.best_paths[(idx, idx2)].length+self.best_paths[(idx2, start)].length)
+                    # print(self.posts[post_type][idx].post.resource[1]+self.posts[post_type][idx2].post.resource[1])
+            # comeback_distances.append((idx, distance + distance_back))
+        # comeback_distances.sort(key=lambda full_distance: full_distance[1])
+        # self.post_rating[post_type] = comeback_distances
+
+    def combine_paths(self, *paths):
+        path_list = []
+        length = 0
+        posts = {}
+        for path in paths:
+            path_list += path.path
+            for turn, post in path.posts.items():
+                posts[turn + length] = post
+            length += path.length
+        return Path(path_list, paths[0].start, paths[0].start, length, paths[0].connector, path.post_type, posts)
 
     def count_income(self, post_type, train_idx):
         """
@@ -397,36 +460,48 @@ class Dispatcher:
         :param train_idx: train idx
         :return: None
         """
-        for post_pair in self.post_rating[post_type]:
-            turns = post_pair[1]
-            if self.posts[post_type][post_pair[0]].post.product[1] >= self.graph.trains[train_idx].goods[1]:
-                estimated_income = self.graph.trains[train_idx].goods[1]
-            else:
-                pass
-            income = self.estimated_consumption(turns) - estimated_income
-            self.income_losses[post_type].append((post_pair[0], income))
-        self.income_losses[post_type].sort(key=lambda loss: loss[1])
+        self.count_start_income()
+        for train_capacity, types in self.train_paths.items():
+            for post_type, paths_list in types.items():
+                paths_list.sort(key=lambda key: min(self.finite_paths[post_type][key].income, train_capacity) /
+                                                    self.finite_paths[post_type][key].length, reverse=True)
+                print([min(self.finite_paths[post_type][key].income, train_capacity) /
+                      self.finite_paths[post_type][key].length for key in paths_list])
 
-    def estimated_consumption(self, turns):
+        # for post_pair in self.post_rating[post_type]:
+        #     turns = post_pair[1]
+        #     if self.posts[post_type][post_pair[0]].post.resource[1] >= self.graph.trains[train_idx].goods[1]:
+        #         estimated_income = self.graph.trains[train_idx].goods[1]
+        #     else:
+        #         pass
+        #     income = self.estimated_consumption(turns, 1) - estimated_income
+        #     self.income_losses[post_type].append((post_pair[0], income))
+        # self.income_losses[post_type].sort(key=lambda loss: loss[1])
+
+    def estimated_consumption(self, turns, population):
         """
         Function to estimate the consumption of products
+        :param population: start population
         :param turns: number of turns to estimate
         :return: consumed products
         """
-        population = 1
+
         consumption = turns * population
+
+        num_of_cycles = turns // 90
         return consumption
 
-    # def get_armor(self, start):
-    #     self.get_min_path(3, start, 1)
+    def get_armor(self):
+        best_path_idx = self.train_paths[self.graph.trains[1].goods[1]][3][0]
+        self.train_tasks[1] = [self.finite_paths[3][best_path_idx].copy()]
 
     def get_products(self):
         """
         Creates the most optimal task for one train to deliver products
         :return: None
         """
-        self.train_tasks[1] = [self.best_paths[(self.home.idx, self.income_losses[2][0][0])].copy(),
-                               self.best_paths[(self.income_losses[2][0][0], self.home.idx)].copy()]
+        best_path_idx = self.train_paths[self.graph.trains[2].goods[1]][2][0]
+        self.train_tasks[2] = [self.finite_paths[2][best_path_idx].copy()]
 
     def prepare(self):
         """
@@ -434,40 +509,117 @@ class Dispatcher:
         :return: None
         """
         self.get_paths(2, self.graph.home.idx)
-        # self.get_paths(3, self.graph.home.idx)
+        self.get_paths(3, self.graph.home.idx)
         self.count_income(2, 1)
-        self.assign_tasks()
+        # self.count_income(3, 1)
 
-    def assign_tasks(self):
+        self.assign_tasks(1)
+        self.assign_tasks(2)
+
+    def upgrade(self):
+        self.connector.upgrade(self.upgrade_dict)
+        for value in self.upgrade_dict.values():
+            value.clear()
+
+    def can_upgrade(self, train_idx, home=False):
+        if home:
+            if self.graph.home.post.upgrade_cost is not None and\
+                    self.graph.home.post.upgrade_cost <= self.graph.home.post.armor[0]:
+                return True
+            else:
+                return False
+        if (1 not in self.train_tasks or self.train_tasks[1]) \
+                and self.graph.trains[train_idx].upgrade_cost is not None \
+                and self.graph.trains[train_idx].upgrade_cost <= self.graph.home.post.armor[0]:
+            return True
+        return False
+
+    def assign_tasks(self, train_idx):
         """
         THis function will choose what is optimal to do in the future
         :return: None
         """
-        self.get_products()
+
+        if self.can_upgrade(train_idx):
+            self.upgrade_dict['trains'].append(train_idx)
+            self.graph.trains[train_idx].goods = (0, self.graph.trains[train_idx].goods[1]*2)
+            self.graph.home.post.armor = (self.graph.home.post.armor[0]-self.graph.trains[train_idx].upgrade_cost, self.graph.home.post.armor[1])
+            self.graph.trains[train_idx].upgrade_cost *= 2
+        if self.can_upgrade(1, True):
+            self.upgrade_dict['posts'].append(74)
+            self.graph.home.post.upgrade_cost *= 2
+        self.upgrade()
+        if train_idx == 1:
+            self.get_armor()
+        else:
+            self.get_products()
 
 
 class Path:
-    def __init__(self, path, start, end, length, connector):
+    def __init__(self, path, start, end, length, connector, post_type=None, posts=None):
         self.path = path
         self.start = start
         self.end = end
         self.length = length
         self.connector = connector
-        self.current_track = [0, 0, 0]
+        self.current_track = [0, 0, 0]  # line_id, direction, length
         self.current_track_idx = 0
+        self.posts = posts  # maybe list
+        self.arrival_points = {}  # point_idx: arrival_time
+        self.stop_dict = {}  # {point_idx: time}
+        self.income = 0
+        self.lines = {}  # line_idx: Line
+        self.post_type = post_type
 
     def copy(self):
-        return Path(self.path, self.start, self.end, self.length, self.connector)
+        return Path(self.path, self.start, self.end, self.length, self.connector, self.post_type, self.posts)
+
+    def get_income(self, full=True):
+        arrival_time = {}
+        for turn, post in self.posts.items():
+            if full:
+                if post.idx not in arrival_time:
+                    self.income += post.resource[1]
+                else:
+                    self.income += min((turn - arrival_time[post.idx]) * post.replenishment, post.resource[1])
+                arrival_time[post.idx] = turn
+
+    def turns_wait(self, train: Train):
+        # best_replenishment = sorted(self.posts, key=lambda post: post.replenishment, reverse=True)
+        best_replenishment = max(self.posts, key=lambda key: self.posts[key].replenishment)
+        best_rep = best_replenishment[0].replenishment
+        if best_rep * self.length >= self.income:
+            turns_to_wait = max((train.goods[1] - self.income) // best_rep, 0)
+            if turns_to_wait > 0:
+                # need to update income from other posts
+                self.income += turns_to_wait * best_rep
+                self.length += turns_to_wait
+                if (train.goods[1] - self.income) * self.length >= self.income:
+                    self.income += train.goods[1]
+                    self.length += 1
+                    turns_to_wait += 1
+                self.stop_dict[best_replenishment[0].idx] = turns_to_wait
+
+    def should_stop(self):
+        # points = self.lines[self.current_track[0]].points
+        # point = points[0] if self.current_track[1] == 1 else points[1]
+        # if point.idx in self.stop_dict:
+        #     self.stop_dict[point.idx] -= 1
+        #     if self.stop_dict[point.idx] == 0:
+        #         del self.stop_dict[point.idx]
+        #     return True
+        return False
 
     def move(self, train_idx):
-
-        if self.current_track[2] == 0:
-            if self.current_track_idx == len(self.path):
-                return False
+        if self.current_track[2] <= 0:
+            # if self.current_track_idx == len(self.path):
+            #     return False
             self.current_track = list(self.path[self.current_track_idx])
-            self.connector.move_train(self.current_track[0], self.current_track[1], train_idx)
-            self.current_track_idx += 1
-
+            if not self.should_stop():
+                self.connector.move_train(self.current_track[0], self.current_track[1], train_idx)
+                self.current_track_idx += 1
         self.current_track[2] -= 1
+        if self.current_track[2] <= 0 and self.current_track_idx == len(self.path):
+            print('end_path')
+            return False
         return True
-
