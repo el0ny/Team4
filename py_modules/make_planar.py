@@ -1,7 +1,15 @@
 """ Module for creating planar graph """
-from py_modules.graph import *
+from py_modules.graph import Graph
+from py_modules.point import Point
+from py_modules.face import Face
+from py_modules.line import Line
 from math import cos, sin, pi
+import random
 from graphModule import getFragments, getAllowedFaces, getAlphaPath, newPosition, getCycle
+
+
+screen_width = 1600
+screen_height = 900
 
 
 def create_graph(raw_graph):
@@ -24,6 +32,21 @@ def create_graph(raw_graph):
     prettify(graph, subgraph, points)
     draw_planar(subgraph, points)
     return points, lines, subgraph
+
+
+def create_graph_from_layer(raw_graph, layer_info):
+    points = {}
+    lines = {}
+    for point in raw_graph['points']:
+        points[point['idx']] = Point(point['idx'], point['post_idx'])
+
+    for line in raw_graph['lines']:
+        point_list = [points[point] for point in line['points']]
+        lines[line['idx']] = Line(point_list, line['idx'], line['length'])
+    for point_dict in layer_info['coordinates']:
+        points[point_dict['idx']].set_coords(point_dict['x']*4, point_dict['y']*4)
+    graph = Graph(points, lines, raw_graph['name'], raw_graph['idx'])
+    return points, lines, graph
 
 
 def get_face_coordinates(N):

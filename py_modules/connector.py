@@ -34,8 +34,9 @@ class Connector:
         game_info = self.send_message(7, '')
         first_layer_info = self.send_message(10, '{"layer":0}')
         second_layer_info = self.send_message(10, '{"layer":1}')
+        ten_layer_info = self.send_message(10, '{"layer":10}')
 
-        return player_info, first_layer_info, second_layer_info
+        return player_info, first_layer_info, second_layer_info, ten_layer_info
 
     def get_info(self):
         turn_message = self.send_message(5, '')
@@ -45,9 +46,11 @@ class Connector:
     def move_train(self, line_idx, speed, train_idx):
         message = '{"line_idx":%d,"speed":%d,"train_idx":%d}' % (line_idx, speed, train_idx)
         move = self.send_message(3, message)
+        # print(message)
 
     def upgrade(self, upgrade_dict):
         message = '{"posts":%s,"trains":%s}' % (str(upgrade_dict['posts']), str(upgrade_dict['trains']))
+        # print(message)
         self.send_message(4, message)
 
     def close_conn(self):
