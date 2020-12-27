@@ -1,5 +1,5 @@
 import pygame
-from py_modules.colors import *
+from py_modules.constants import *
 
 
 class Line:
@@ -9,7 +9,7 @@ class Line:
         self.points = points
 
     def get_points(self):
-        return [point.idx for point in self.points]
+        return [point.fake_idx for point in self.points]
 
     def draw(self, screen):
         # font = pygame.font.SysFont('arial', 20)

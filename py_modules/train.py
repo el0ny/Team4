@@ -1,7 +1,7 @@
 import pygame
 
 from py_modules.line import Line
-from py_modules.colors import *
+from py_modules.constants import *
 
 
 class Train:
@@ -46,9 +46,6 @@ class Train:
                          (int(self.coordinates[0]) - 8, int(self.coordinates[1]) - 8,
                           16,
                           16), 1)
-
-    def get_possible_lines(self):
-        return self.line_idx
 
     def update(self, train_dict: dict):
         self.goods = (train_dict['goods'], train_dict['goods_capacity'])

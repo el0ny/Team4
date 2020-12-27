@@ -1,18 +1,20 @@
 import pygame
-from py_modules.colors import *
+from py_modules.constants import *
 
 
 screen_width = 1600
 screen_height = 900
 
+
 class Point:
-    def __init__(self, idx: int, post_idx: int = None, coordinates: list = None):
+    def __init__(self, idx: int, post_idx: int = None, fake_idx: int = None, coordinates: list = None):
         self.idx = idx
         self.post_idx = post_idx
+
+        self.fake_idx = fake_idx if fake_idx is not None else idx
+
         self.original_coordinates = coordinates
         self.coordinates = coordinates  # zoomed
-        self.adjacent_points = []
-        self.faces = []
         self.post = None
         self.home = False
         self.scale = 1
@@ -21,9 +23,6 @@ class Point:
     def set_coords(self, x: int, y: int):
         self.original_coordinates = [x, y]
         self.coordinates = [x, y]
-
-    def set_adjacent_points(self, points):
-        self.adjacent_points = points
 
     def draw_table(self, info, screen):
         font = pygame.font.SysFont('arial', 20)

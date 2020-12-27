@@ -49,6 +49,8 @@ class Post:
     def update(self, post_dict: dict):
         if self.type == 1:
             self.armor = (post_dict['armor'], post_dict['armor_capacity'])
+            if post_dict['population'] < self.population[0]:
+                print('{0}/{1} people died from {2} food'.format(self.population[0]-post_dict['population'], self.population[0], self.product[0]))
             self.population = (post_dict['population'], post_dict['population_capacity'])
             self.product = (post_dict['product'], post_dict['product_capacity'])
             self.upgrade_cost = post_dict['next_level_price']
