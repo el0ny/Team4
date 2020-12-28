@@ -27,7 +27,7 @@ def adjust_win_resolution():
 
 
 class Game:
-    def __init__(self):
+    def __init__(self, name):
         self.selected = None
         self.dragging = False
         self.running = True
@@ -37,6 +37,7 @@ class Game:
         self.trains = {}
         self.connector = None
         self.player_idx = None
+        self.name = name
 
         adjust_win_resolution()
         pygame.display.init()
@@ -48,16 +49,20 @@ class Game:
         # with open('output.txt', 'a') as f:
         running = True
         while self.graph.tick < 500 and running:
-
             start = time.time()
             info = self.connector.get_info()
-            self.update_map(self.posts, info)
+            if info != 4:
+                self.update_map(self.posts, info)
+            else:
+                continue
+            if not self.disp.do_tasks():
+               continue
+
             self.graph.tick += 1
-            self.disp.do_tasks()
             for key, train in self.trains.items():
                 train.update(info['trains'][key - 1])
             self.graph.rating = info['ratings'][self.player_idx]['rating']
-            if self.graph.tick % 4 == 1:
+            if self.graph.tick % 1 == 0:
                 if self.selected is not None:
                     self.selected.draw(self.image, self.sc)
                 self.update_screen(self.graph)
@@ -76,7 +81,7 @@ class Game:
         except Exception as e:
             print("something's wrong with the server. Exception is %s" % e)
             return
-        self.connector.login('team', game_name='Game of the Year')
+        self.connector.login(self.name, game_name='Game of the Year')
         player_info, zero_layer_info, first_layer_info, ten_layer_info = self.connector.get_map()
         raw_graph = zero_layer_info
         self.player_idx = player_info['idx']
@@ -147,9 +152,11 @@ class Game:
     #     return None
 
     def update_map(self, posts, info):
-        # for event in info['posts'][0]['events']:
-        #     print(event)
-        #     print(self.graph.tick)
+        for event in info['posts'][0]['events']:
+            if event['type'] == 4:
+                self.disp.make_prediction(event['refugees_number']*2)
+            print(event)
+            # print(self.graph.tick)
         for post in info['posts']:
             posts[post['idx']].post.update(post)
 
@@ -167,7 +174,8 @@ class Game:
 
 
 def main():
-    game = Game()
+    name = sys.argv[1]
+    game = Game(name)
     game.run()
 
 

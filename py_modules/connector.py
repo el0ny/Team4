@@ -26,11 +26,11 @@ class Connector:
             while len(data_bytes) < length:
                 packet = self.client_socket.recv(length - len(data_bytes))
                 data_bytes.extend(packet)
-        elif action == 4:
-            self.send_message(code, message)
+        # elif action == 4:
+        #     return 4
         else:
             # print(message)
-            return None
+            return 4
         data = data_bytes.decode('utf-8')
         if data != '':
             data_dict = json.loads(data)
@@ -75,7 +75,7 @@ class Connector:
 
     def upgrade(self, upgrade_dict):
         message = '{"posts":%s,"trains":%s}' % (str(upgrade_dict['posts']), str(upgrade_dict['trains']))
-        self.send_message(4, message)
+        return self.send_message(4, message)
 
     def close_conn(self):
         self.client_socket.close()
