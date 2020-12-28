@@ -16,6 +16,7 @@ class Train:
         self.font = pygame.font.SysFont('arial', 20)
         self.goods_type = train_dict['goods_type']
         self.upgrade_cost = train_dict['next_level_price']
+        self.crash_timer = 0
 
     def set_line(self, line: Line):
         self.line = line
@@ -54,3 +55,6 @@ class Train:
         self.speed = train_dict['speed']
         self.goods_type = train_dict['goods_type']
         self.upgrade_cost = train_dict['next_level_price']
+        if train_dict['events']:
+            self.crash_timer = train_dict['cooldown']
+            print('crash')

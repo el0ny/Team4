@@ -17,7 +17,7 @@ class Path:
         return Path(self.path, self.length, self.connector, stop_dict=self.stop_dict)
 
     def should_stop(self, train_idx):
-        if self.tick in self.stop_dict:
+        if self.tick in self.stop_dict and self.stop_dict[self.tick] > 0:
             self.connector.move_train(self.current_track[0], 0, train_idx)
             self.stop_dict[self.tick] -= 1
             if self.stop_dict[self.tick] == 0:

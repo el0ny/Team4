@@ -18,6 +18,7 @@ class Dispatcher:
         self.connector = connector
         self.upgrade_dict = {'posts': [], 'trains': []}
         self.trains_idxes = [train.idx for train in self.graph.trains.values()]
+        self.crashed_trains = []
 
     def get_best_path(self, point_a, point_b, train_lines=None, excluded_points=None):
         """
@@ -59,14 +60,22 @@ class Dispatcher:
         :return: None
         """
         for train, paths in self.train_tasks.items():
+            if self.graph.trains[train].crash_timer > 0:
+                if train not in self.crashed_trains:
+                    self.crashed_trains.append(train)
+                    paths[0] = paths[0].copy()
+                    paths[0].stop_dict[0] = len(self.crashed_trains)-1
+
+                self.graph.trains[train].crash_timer -= 1
+                print(f'crashed trains: {paths[0].stop_dict}')
+                continue
+            elif train in self.crashed_trains:
+                self.crashed_trains.remove(train)
             if self.stop_kill[0]['turn'] == self.graph.tick and self.stop_kill[0]['train_idx'] == train:
                 if self.home.post.dead_people < self.stop_kill[0]['remain_population']:
                     paths[0].stop(train)
-
                     self.stop_kill[0]['turn'] += 1
-                    dict_to_add = {}
-                    list_to_delete = []
-                    last_add = None
+
                     rem_turns = self.home.post.product[0] // self.home.post.population[0]
                     if self.arrival_list[1][0] - self.arrival_list[0][0] < rem_turns:
                         self.arrival_dict[self.arrival_list[1][2]][self.arrival_list[1][0]].stop_dict[self.arrival_list[1][0]-2] = rem_turns - self.arrival_list[1][0] + self.arrival_list[0][0] + 1
@@ -100,20 +109,26 @@ class Dispatcher:
             if not paths:
                 continue
             if paths[0] == 'upgrade':
-                self.upgrade_dict['trains'].append(train)
-                if self.upgrade(train) != 4:
-                    paths.pop(0)
-            elif paths[0] == 'upgrade2':
-                self.upgrade_dict['trains'].append(train)
-                self.upgrade_dict['trains'].append(train)
-                if self.upgrade(train) != 4:
-                    paths.pop(0)
+                if self.can_upgrade(train):
+                    self.upgrade_dict['trains'].append(train)
+                    self.upgrade(train)
                 else:
-                    return False
+                    paths.insert(1, 'upgrade')
+                paths.pop(0)
+            elif paths[0] == 'upgrade2':
+
+                self.upgrade_dict['trains'].append(train)
+                self.upgrade_dict['trains'].append(train)
+                self.upgrade(train)
+                paths.pop(0)
+
             elif paths[0] == 'upgrade_town':
-                self.upgrade_dict['posts'].append(self.home.post.post_idx)
-                if self.upgrade(post=True) != 4:
-                    paths.pop(0)
+                if self.can_upgrade(train, home=True):
+                    self.upgrade_dict['posts'].append(self.home.post.post_idx)
+                    self.upgrade(post=True)
+                else:
+                    paths.insert(1, 'upgrade_town')
+                paths.pop(0)
             if paths[0].move(train) is False:
                 print('train {0} on turn {1}'.format(train, self.graph.tick))
                 self.arrival_list.pop()
@@ -162,7 +177,7 @@ class Dispatcher:
         self.kill_points = []
         death_idx = -1
         for arrival in self.arrival_list:
-            if arrival[0] > tick:
+            if 500 >= arrival[0] > tick:
                 consume = 0
                 consume += (arrival[0]-tick-1) * self.home.post.population[0]
                 consume += (arrival[0] - tick) // 25 if tick > 125 else max(0, (arrival[0] - 125)//25)
@@ -282,3 +297,15 @@ class Dispatcher:
         for value in self.upgrade_dict.values():
             value.clear()
         return response
+
+    def can_upgrade(self, train_idx, home=False):
+        if home:
+            if self.graph.home.post.upgrade_cost is not None and\
+                    self.graph.home.post.upgrade_cost <= self.graph.home.post.armor[0]:
+                return True
+            else:
+                return False
+        if self.graph.trains[train_idx].upgrade_cost is not None \
+                and self.graph.trains[train_idx].upgrade_cost <= self.graph.home.post.armor[0]:
+            return True
+        return False

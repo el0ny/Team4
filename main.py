@@ -48,24 +48,27 @@ class Game:
     def update_function(self):
         # with open('output.txt', 'a') as f:
         running = True
-        while self.graph.tick < 500 and running:
+        while self.graph.tick <= 500 and running:
             start = time.time()
             info = self.connector.get_info()
+            self.graph.rating = info['ratings'][self.player_idx]['rating']
             if info != 4:
                 self.update_map(self.posts, info)
             else:
                 continue
-            if not self.disp.do_tasks():
-               continue
 
-            self.graph.tick += 1
             for key, train in self.trains.items():
                 train.update(info['trains'][key - 1])
-            self.graph.rating = info['ratings'][self.player_idx]['rating']
+
             if self.graph.tick % 1 == 0:
                 if self.selected is not None:
                     self.selected.draw(self.image, self.sc)
                 self.update_screen(self.graph)
+
+            if not self.disp.do_tasks():
+               continue
+            self.graph.tick += 1
+
             if time.time()-start > 0.9:
                 print(time.time()-start)
             else:
@@ -156,7 +159,7 @@ class Game:
             if event['type'] == 4:
                 self.disp.make_prediction(event['refugees_number']*2)
             print(event)
-            # print(self.graph.tick)
+            print(self.graph.tick)
         for post in info['posts']:
             posts[post['idx']].post.update(post)
 
