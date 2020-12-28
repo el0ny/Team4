@@ -37,13 +37,13 @@ class Connector:
 
         return data_dict
 
-    def login(self,  player_name, game_name=None):
+    def login(self,  player_name, game_name=None, number=1):
         name = '}'
         if game_name is not None:
 
             name = ', "game": "%s"}' % game_name
 
-        message = '{"name": "%s", "num_turns": 500, "num_players": 1' % player_name
+        message = '{"name": "%s", "num_turns": 500, "num_players": %s' % (player_name, number)
         message += name
         login_info = self.send_message(1, message)
         return login_info

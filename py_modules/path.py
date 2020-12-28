@@ -32,6 +32,7 @@ class Path:
     def move(self, train_idx):
         if not self.should_stop(train_idx):
             if self.current_track[2] <= 0:
+                # print(f'!!!!!!!!!!!!!!!   {self.current_track_idx}')
                 self.current_track = list(self.path[self.current_track_idx])
                 if self.connector.move_train(self.current_track[0], self.current_track[1], train_idx) == 4:
                     return 4

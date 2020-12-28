@@ -18,6 +18,7 @@ class Dispatcher:
         self.connector = connector
         self.upgrade_dict = {'posts': [], 'trains': []}
         self.trains_idxes = [train.idx for train in self.graph.trains.values()]
+        self.enemy_trains = []
         self.crashed_trains = []
 
     def get_best_path(self, point_a, point_b, train_lines=None, excluded_points=None):
@@ -35,9 +36,11 @@ class Dispatcher:
             if excluded_points is None or (
                     points[0] not in excluded_points.keys() and points[1] not in excluded_points.keys()):
                 lines_list.append([line.idx, line.length, line.get_points()])
+        start = self.graph.points[point_a].idx
         if train_lines is not None:
+            start = point_a
             lines_list += train_lines
-        return getOptimalPath(self.graph.points[point_a].idx, self.graph.points[point_b].idx, lines_list)
+        return getOptimalPath(start, self.graph.points[point_b].idx, lines_list)
 
     def get_path_to_point(self, point_idx, train_idx):
         """
@@ -47,12 +50,17 @@ class Dispatcher:
         :return: a path
         """
         lines = [[-1, self.graph.trains[train_idx].position,
-                  [self.graph.trains[train_idx].line.points[0].idx, 0]],
+                  [self.graph.trains[train_idx].line.points[0].fake_idx, 0]],
                  [-2, self.graph.trains[train_idx].line.length - self.graph.trains[train_idx].position,
-                  [0, self.graph.trains[train_idx].line.points[1].idx]]]
+                  [0, self.graph.trains[train_idx].line.points[1].fake_idx]]]
         best_path = self.get_best_path(0, point_idx, lines)
         best_path[0][0] = self.graph.trains[train_idx].line.idx
-        return best_path
+        distance = 0
+        for line in best_path:
+            line.append(self.graph.lines[line[0]].length)
+            distance += line[2]
+        Path(best_path, distance, self.connector)
+        return Path(best_path, distance, self.connector)
 
     def do_tasks(self):
         """
@@ -80,28 +88,6 @@ class Dispatcher:
                     if self.arrival_list[1][0] - self.arrival_list[0][0] < rem_turns:
                         self.arrival_dict[self.arrival_list[1][2]][self.arrival_list[1][0]].stop_dict[self.arrival_list[1][0]-2] = rem_turns - self.arrival_list[1][0] + self.arrival_list[0][0] + 1
                         print(f'{self.arrival_list[1][2]} will stop by {rem_turns - self.arrival_list[1][0] + self.arrival_list[0][0] + 1} turns')
-
-                    # for key, value in self.arrival_dict[train].items():
-                    #     if key > self.graph.tick:
-                    #         dict_to_add[key+rem_turns] = value
-                    #         list_to_delete.append(key)
-                    #         for point in self.arrival_list:
-                    #             if point[0]-key <= rem_turns:
-                    #                 self.train_tasks[point[2]][0].stop_dict
-
-
-                    # for key, value in self.arrival_dict[train].items():
-                    #     if key > self.graph.tick:
-                    #         dict_to_add[key + 1] = value
-                    #         list_to_delete.append(key)
-                    #         last_add
-                    #         # self.arrival_dict[train][key+1] = value
-                    #         # del self.arrival_dict[train][key]
-                    #         for point in self.arrival_list:
-                    #             if key+1 == point[0]:
-                    #                 self.stop_kill.append({'turn': point[2]-2, 'people_to_kill': 0, 'train_idx': point[2]})
-                    # for point in list_to_delete:
-
                     print('stopped')
                     continue
                 else:
@@ -129,7 +115,17 @@ class Dispatcher:
                 else:
                     paths.insert(1, 'upgrade_town')
                 paths.pop(0)
+            # free_points = self.check_enemy_trains()
+            # if free_points:
+            #     if self.graph.trains[train].loading and \
+            #             self.graph.trains[train].goods[1] - self.graph.trains[train].goods[0] > 20 and\
+            #             not self.graph.trains[train].enemy:
+            #         paths.insert(0, self.best_paths[free_points[0]])
+            #         paths[1].stop_dict[paths[1].tick] -= 5
+            #         self.graph.trains[train].enemy = True
+
             if paths[0].move(train) is False:
+                self.graph.trains[train].enemy = False
                 print('train {0} on turn {1}'.format(train, self.graph.tick))
                 self.arrival_list.pop()
                 paths.pop(0)
@@ -138,15 +134,15 @@ class Dispatcher:
     def add_path(self, start, end, post_type, excluded_points=None):
         path = self.get_best_path(start, end, excluded_points=excluded_points)
         distance = 0
-        posts = {}
+        # posts = {}
         for line in path:
             line.append(self.graph.lines[line[0]].length)
             distance += line[2]
-            point = self.graph.lines[line[0]].points[0] if line[1] == -1 else self.graph.lines[line[0]].points[1]
-            if point.post is not None and post_type == point.post.type:
-                posts[distance] = point.post
-        self.best_paths[(start, end)] = Path(path, distance, self.connector)
-        return start, end
+            # point = self.graph.lines[line[0]].points[0] if line[1] == -1 else self.graph.lines[line[0]].points[1]
+            # if point.post is not None and post_type == point.post.type:
+            #     posts[distance] = point.post
+        # self.best_paths[(start, end)] = Path(path, distance, self.connector)
+        return Path(path, distance, self.connector)
 
     def combine_paths(self, *paths):
         path_list = []
@@ -162,12 +158,23 @@ class Dispatcher:
             length += path.length
         return Path(path_list, length, paths[0].connector)
 
+    def check_enemy_trains(self):
+        posts_idxs = [102, 111]
+        free_posts = [102, 111]
+        for train_idx, train in self.graph.enemy_trains.items():
+            for index in posts_idxs:
+                path = self.get_path_to_point(index, train_idx)
+                if path.length < 3:
+                    free_posts.remove(index)
+
+        return free_posts
+
     def create_path_through_points(self, *points, post_type=3):
         index = tuple(points)
         paths = []
         for i in range(len(points)-1):
             paths.append(self.add_path(points[i], points[i+1], post_type))
-        self.best_paths[index] = self.combine_paths([self.best_paths[i] for i in paths])
+        self.best_paths[index] = self.combine_paths([i for i in paths])
 
     def make_prediction(self, turn, tick=None, food_source=False):
         if tick is None:
@@ -208,10 +215,15 @@ class Dispatcher:
         self.create_path_through_points(57, 60, 90, 87, 57)
         self.create_path_through_points(57, 61, 101, 102, 97, 57)
 
+        self.create_path_through_points(101, 102, 101)
+        self.create_path_through_points(101, 111, 101)
+
         self.best_paths['armor'] = self.best_paths[(57, 61, 101, 97, 57)]
         self.best_paths['product1'] = self.best_paths[(57, 67, 90, 87, 57)]
         self.best_paths['product2'] = self.best_paths[(57, 60, 90, 87, 57)]
         self.best_paths['armor1'] = self.best_paths[(57, 61, 101, 102, 97, 57)]
+        self.best_paths[102] = self.best_paths[(101, 102, 101)]
+        self.best_paths[111] = self.best_paths[(101, 111, 101)]
 
         self.tactics_assign()
 

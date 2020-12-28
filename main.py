@@ -27,7 +27,7 @@ def adjust_win_resolution():
 
 
 class Game:
-    def __init__(self, name):
+    def __init__(self, name, game, number):
         self.selected = None
         self.dragging = False
         self.running = True
@@ -38,6 +38,9 @@ class Game:
         self.connector = None
         self.player_idx = None
         self.name = name
+        self.game = game
+        self.number = number
+        self.enemy_trains = {}
 
         adjust_win_resolution()
         pygame.display.init()
@@ -48,9 +51,15 @@ class Game:
     def update_function(self):
         # with open('output.txt', 'a') as f:
         running = True
+        # time.sleep(5)
         while self.graph.tick <= 500 and running:
+
             start = time.time()
             info = self.connector.get_info()
+            if not self.enemy_trains:
+                self.enemy_trains = {train['idx']: Train(train) for train in info['trains'] if
+                                     train['idx'] not in self.trains}
+                self.graph.enemy_trains = self.enemy_trains
             self.graph.rating = info['ratings'][self.player_idx]['rating']
             if info != 4:
                 self.update_map(self.posts, info)
@@ -59,7 +68,8 @@ class Game:
 
             for key, train in self.trains.items():
                 train.update(info['trains'][key - 1])
-
+            # for key, train in self.enemy_trains.items():
+            #     train.update(info['trains'][key - 1])
             if self.graph.tick % 1 == 0:
                 if self.selected is not None:
                     self.selected.draw(self.image, self.sc)
@@ -84,7 +94,7 @@ class Game:
         except Exception as e:
             print("something's wrong with the server. Exception is %s" % e)
             return
-        self.connector.login(self.name, game_name='Game of the Year')
+        self.connector.login(self.name, game_name=self.game, number=self.number)
         player_info, zero_layer_info, first_layer_info, ten_layer_info = self.connector.get_map()
         raw_graph = zero_layer_info
         self.player_idx = player_info['idx']
@@ -97,7 +107,9 @@ class Game:
             self.posts[post['idx']] = points[post['point_idx']]
         self.graph.posts = self.posts
         self.trains = {train['idx']: Train(train) for train in player_info['trains']}
+
         self.graph.trains = self.trains
+
         for train in self.trains.values():
             train.set_line(lines[train.line_idx])
         self.disp = Dispatcher(self.graph, self.connector)
@@ -178,7 +190,10 @@ class Game:
 
 def main():
     name = sys.argv[1]
-    game = Game(name)
+    game = sys.argv[2]
+    number = sys.argv[3]
+
+    game = Game(name, game, number)
     game.run()
 
 
