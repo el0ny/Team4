@@ -49,17 +49,21 @@ class Game:
         self.image = pygame.Surface([900, 900])
 
     def update_function(self):
-        # with open('output.txt', 'a') as f:
+
         running = True
-        # time.sleep(5)
+        while running:
+            for game in self.connector.get_game()['games']:
+                if game['name'] == self.game and game['state'] == 2:
+                    running = False
+        running = True
         while self.graph.tick <= 500 and running:
 
             start = time.time()
             info = self.connector.get_info()
-            if not self.enemy_trains:
-                self.enemy_trains = {train['idx']: Train(train) for train in info['trains'] if
-                                     train['idx'] not in self.trains}
-                self.graph.enemy_trains = self.enemy_trains
+            # if not self.enemy_trains:
+            #     self.enemy_trains = {train['idx']: Train(train) for train in info['trains'] if
+            #                          train['idx'] not in self.trains}
+            #     self.graph.enemy_trains = self.enemy_trains
             self.graph.rating = info['ratings'][self.player_idx]['rating']
             if info != 4:
                 self.update_map(self.posts, info)
